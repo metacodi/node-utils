@@ -22,15 +22,19 @@ Prompt.parse(process.argv);
 
 if (Prompt.verbose) { console.log('Arguments: ', Prompt.opts()); }
 
-incrementPackageVersion();
+(async () => {
 
-if (Resource.exists(`dist`)) {
-  Terminal.log(`Eliminant la carpeta de distribució ${chalk.bold(`dist`)}.`);
-  Resource.removeSync(`dist`);
-}
+  incrementPackageVersion();
+  
+  if (Resource.exists(`dist`)) {
+    Terminal.log(`Eliminant la carpeta de distribució ${chalk.bold(`dist`)}.`);
+    Resource.removeSync(`dist`);
+  }
+  
+  Terminal.log(chalk.bold(`Compilant projecte typescript`));
+  await Terminal.run(`tsc`);
+  
+  Terminal.log(`npm publish`);
+  await Terminal.run(`npm publish`);
 
-Terminal.log(chalk.bold(`Compilant projecte typescript`));
-await Terminal.run(`tsc`);
-
-Terminal.log(`npm publish`);
-await Terminal.run(`npm publish`);
+})();
