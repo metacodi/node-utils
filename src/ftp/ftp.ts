@@ -3,9 +3,10 @@ import chalk from 'chalk';
 import moment from 'moment';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Resource, ResourceType } from './resource';
-import { Terminal } from './terminal';
-import { applyFilterPattern, FilterPatternType } from './functions';
+
+import { Resource, ResourceType } from '../resource/resource';
+import { Terminal } from '../terminal/terminal';
+import { applyFilterPattern, FilterPatternType } from '../functions/functions';
 
 
 export interface FtpUploadOptions {

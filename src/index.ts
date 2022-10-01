@@ -1,12 +1,14 @@
+#!/usr/bin/env node
 
-export { FtpClient, FtpUploadOptions } from './ftp';
 
-export * from './functions';
+export { FtpClient, FtpUploadOptions } from './ftp/ftp';
 
-export { Git } from './git';
+export * from './functions/functions';
 
-export * from './mysql';
+export { Git } from './git/git';
 
-export { Resource, ResourceType } from './resource';
+export * from './mysql/mysql';
 
-export { Terminal, ChalkColor } from './terminal';
+export { Resource, ResourceType } from './resource/resource';
+
+export { Terminal, ChalkColor } from './terminal/terminal';

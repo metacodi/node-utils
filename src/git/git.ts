@@ -1,5 +1,6 @@
-import { Terminal, TerminalRunOptions } from './terminal';
 import * as fs from 'fs';
+
+import { Terminal, TerminalRunOptions } from '../terminal/terminal';
 
 
 export class Git {
@@ -212,11 +213,11 @@ export class Git {
     let hasErrors = false;
 
     // Acceptem els canvis al reposiori.
-    if (!hasErrors) { await Terminal.run(`git add -A`, run).catch(err => { hasErrors = true; Terminal.log(`> git add -A`); Terminal.error(err); }); }
+    if (!hasErrors) { await Terminal.run(`git add -A`, run).catch((err: any) => { hasErrors = true; Terminal.log(`> git add -A`); Terminal.error(err); }); }
     // Fem el commit al reposiori.
-    if (!hasErrors) { await Terminal.run(`git commit -m "${commit}"`, run).catch(err => { hasErrors = true; Terminal.log(`> git commit -m "${commit}"`); Terminal.error(err); }); }
+    if (!hasErrors) { await Terminal.run(`git commit -m "${commit}"`, run).catch((err: any) => { hasErrors = true; Terminal.log(`> git commit -m "${commit}"`); Terminal.error(err); }); }
     // Publiquem el reposiori.
-    if (!hasErrors) { await Terminal.run(`git push origin ${branch}`, run).catch(err => { hasErrors = true; Terminal.log(`> git push origin ${branch}`); Terminal.error(err); }); }
+    if (!hasErrors) { await Terminal.run(`git push origin ${branch}`, run).catch((err: any) => { hasErrors = true; Terminal.log(`> git push origin ${branch}`); Terminal.error(err); }); }
 
     // Restablim l'anterior carpeta de treball.
     if (diffDir) { process.chdir(cwd); }

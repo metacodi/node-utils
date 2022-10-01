@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
-import { Terminal } from './terminal';
-import { applyFilterPattern, FilterPatternType } from './functions';
 import moment from 'moment';
+
+import { Terminal } from '../terminal/terminal';
+import { applyFilterPattern, FilterPatternType } from '../functions/functions';
 
 
 export interface ResourceType {

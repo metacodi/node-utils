@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import Prompt from 'commander';
 
-import { incrementPackageVersion, Resource, Terminal } from '../src/';
+import { incrementPackageVersion, Resource, Terminal, Git } from '../src/';
 
 /**
  * **Usage**
@@ -30,7 +30,10 @@ if (Prompt.verbose) { console.log('Arguments: ', Prompt.opts()); }
     Terminal.log(`Eliminant la carpeta de distribució ${chalk.bold(`dist`)}.`);
     Resource.removeSync(`dist`);
   }
-  
+
+  const ok = await Git.publish({ branch: 'main', commit: Prompt.commit });
+  if (ok) { Terminal.log(`Git published successfully!`); }
+
   Terminal.log(chalk.bold(`Compilant projecte typescript`));
   await Terminal.run(`tsc`);
   

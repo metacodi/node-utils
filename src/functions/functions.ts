@@ -1,8 +1,8 @@
 import chalk from 'chalk';
 import moment from 'moment';
 
-import { Resource } from './resource';
-import { Terminal } from './terminal';
+import { Resource } from '../resource/resource';
+import { Terminal } from '../terminal/terminal';
 
 
 // ---------------------------------------------------------------------------------------------------
