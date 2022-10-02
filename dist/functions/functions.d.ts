@@ -11,4 +11,5 @@ export declare const upgradePatchVersion: (version: string) => string;
 export declare const upgradeMinorVersion: (version: string) => string;
 export declare const upgradeMajorVersion: (version: string) => string;
 export declare const incrementPackageVersion: () => void;
+export declare const upgradeDependency: (packageName: string, type?: '--save-dev' | '--save-prod' | '--save-peer' | '-D') => Promise<void>;
 //# sourceMappingURL=functions.d.ts.map

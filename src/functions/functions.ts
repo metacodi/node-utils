@@ -119,3 +119,17 @@ export const incrementPackageVersion = () => {
   Terminal.log('Incremented ' + chalk.bold('package.json') + ' patch version to:', Terminal.green(pkg.version));
   Resource.save('package.json', pkg);
 }
+
+export const upgradeDependency = async (packageName: string, type?: '--save-dev' | '--save-prod' | '--save-peer' | '-D') => {
+  if (!type) { type = '--save-prod'; }
+  if (type === '-D') { type = '--save-dev'; }
+  const section = type === '--save-prod' ? 'dependencies' : (type === '--save-peer' ? 'peerDependencies' : 'devDependencies');
+  const pkg = Resource.open(`package.json`);
+  const oldVersion = pkg[section][packageName];
+  Terminal.logInline(`- ${chalk.green(packageName)}: ...`);
+  await Terminal.run(`npm i ${packageName}`);
+  const pkg2 = Resource.open(`package.json`);
+  const version = pkg2[section][packageName];
+  const changed = version !== oldVersion;
+  Terminal.log(`+ ${chalk.green(packageName)}: ${changed ? chalk.bold(version) : version}`);
+}
