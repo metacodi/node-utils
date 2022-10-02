@@ -162,6 +162,17 @@ export class Resource {
   /** Check if local path is a file. */
   static isFile(resource: string) { return fs.lstatSync(resource).isFile(); }
 
+  /** Si no existeix, crea la carpeta o subcarpetes indicades. */
+  static createFolder(path: string) {
+    const folders = Resource.split(path);
+    const current: string[] = [];
+    folders.map(folder => {
+      current.push(folder);
+      const target = Resource.normalize(current.join('/'));
+      if (!fs.existsSync(target)) { fs.mkdirSync(target); }
+    });
+  }
+
   /**
    * Obté informació detallada de les carpetes i els arxius del directori actual.
    * ```typescript

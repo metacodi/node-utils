@@ -36,6 +36,7 @@ export declare class Resource {
     static isReadOnly(resource: string): boolean;
     static isDirectory(resource: string): boolean;
     static isFile(resource: string): boolean;
+    static createFolder(path: string): void;
     static discover(resource: string, options?: {
         ignore?: FilterPatternType;
         filter?: FilterPatternType;

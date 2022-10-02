@@ -148,6 +148,17 @@ class Resource {
     }
     static isDirectory(resource) { return fs.lstatSync(resource).isDirectory(); }
     static isFile(resource) { return fs.lstatSync(resource).isFile(); }
+    static createFolder(path) {
+        const folders = Resource.split(path);
+        const current = [];
+        folders.map(folder => {
+            current.push(folder);
+            const target = Resource.normalize(current.join('/'));
+            if (!fs.existsSync(target)) {
+                fs.mkdirSync(target);
+            }
+        });
+    }
     static discover(resource, options, indent = '') {
         if (!options) {
             options = {};

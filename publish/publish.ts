@@ -31,11 +31,11 @@ if (Prompt.verbose) { console.log('Arguments: ', Prompt.opts()); }
     Resource.removeSync(`dist`);
   }
 
-  const ok = await Git.publish({ branch: 'main', commit: Prompt.commit });
-  if (ok) { Terminal.log(`Git published successfully!`); }
-
   Terminal.log(chalk.bold(`Compilant projecte typescript`));
   await Terminal.run(`tsc`);
+
+  const ok = await Git.publish({ branch: 'main', commit: Prompt.commit });
+  if (ok) { Terminal.log(`Git published successfully!`); }
   
   Terminal.log(`npm publish`);
   await Terminal.run(`npm publish`);
