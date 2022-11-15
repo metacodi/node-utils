@@ -3,6 +3,15 @@ export declare const timestamp: (inp?: moment.MomentInput) => string;
 export declare const logTime: (message?: any, ...optionalParams: any[]) => void;
 export declare function round(value: number, decimals?: number): number;
 export declare function capitalize(text: string): string;
+export declare const concatError: (error: any, message: string) => {
+    code?: number;
+    message: string;
+};
+export declare const getErrorMessage: (error: any) => string;
+export declare const getErrorObject: (error: any) => {
+    code?: number;
+    message: string;
+};
 export declare type FilterPatternType = string | RegExp | ((text: string) => boolean) | {
     test: RegExp | ((text: string) => boolean);
 };

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -26,4 +25,6 @@ var resource_1 = require("./resource/resource");
 Object.defineProperty(exports, "Resource", { enumerable: true, get: function () { return resource_1.Resource; } });
 var terminal_1 = require("./terminal/terminal");
 Object.defineProperty(exports, "Terminal", { enumerable: true, get: function () { return terminal_1.Terminal; } });
+__exportStar(require("./utils/file-logger"), exports);
+__exportStar(require("./utils/task-executor"), exports);
 //# sourceMappingURL=index.js.map
