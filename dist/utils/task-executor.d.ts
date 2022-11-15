@@ -1,12 +1,5 @@
 /// <reference types="node" />
 import moment from 'moment';
-export declare type LimitType = 'request' | 'trade';
-export interface Limit {
-    type: LimitType;
-    maxQuantity: number;
-    period: number;
-    unitOfTime?: moment.unitOfTime.DurationAs;
-}
 export interface Interval {
     period: number;
     unitOfTime?: moment.unitOfTime.DurationAs;
@@ -37,7 +30,6 @@ export declare abstract class TaskExecutor {
     protected sleepTasksInterval(period?: number): void;
     protected processTasksInterval(): void;
     protected get isTaskIntervalOn(): boolean;
-    updateLimit(limit: Limit): void;
     protected addTask(task: any): void;
     protected consumeTask(): any;
     protected tryAgainTask(): any;

@@ -1,18 +1,7 @@
 import moment from 'moment';
+import { logTime } from '../functions/functions';
 
 
-const timestamp = (inp?: moment.MomentInput) => moment(inp).format('YYYY-MM-DD HH:mm:ss.SSS');
-
-const logTime = (message?: any, ...optionalParams: any[]): void => console.log(`${timestamp()} -> ${message}`, ...optionalParams);
-
-export type LimitType = 'request' | 'trade';
-
-export interface Limit {
-  type: LimitType;
-  maxQuantity: number;
-  period: number;
-  unitOfTime?: moment.unitOfTime.DurationAs;
-}
 
 export interface Interval {
   period: number;
@@ -165,11 +154,6 @@ export abstract class TaskExecutor {
   }
 
   protected get isTaskIntervalOn(): boolean { return this.intervalSubscription !== undefined; }
-
-  //  limits
-  // ---------------------------------------------------------------------------------------------------
-
-  updateLimit(limit: Limit) { Object.assign(this.options || {}, limit); this.changeLimitsPending = this.isTaskIntervalOn; }
 
 
   //  queue

@@ -1,12 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaskExecutor = void 0;
-const moment_1 = __importDefault(require("moment"));
-const timestamp = (inp) => (0, moment_1.default)(inp).format('YYYY-MM-DD HH:mm:ss.SSS');
-const logTime = (message, ...optionalParams) => console.log(`${timestamp()} -> ${message}`, ...optionalParams);
+const functions_1 = require("../functions/functions");
 ;
 class TaskExecutor {
     constructor(options) {
@@ -129,7 +124,6 @@ class TaskExecutor {
         ;
     }
     get isTaskIntervalOn() { return this.intervalSubscription !== undefined; }
-    updateLimit(limit) { Object.assign(this.options || {}, limit); this.changeLimitsPending = this.isTaskIntervalOn; }
     addTask(task) { if (this.add === 'unshift') {
         this.queue.unshift(task);
     }
@@ -152,12 +146,12 @@ exports.TaskExecutor = TaskExecutor;
 class TestTaskExecutor extends TaskExecutor {
     stringify(task) { return typeof task === 'object' ? JSON.stringify(task) : task; }
     do(task) {
-        logTime(`do task ${this.stringify(task)}`);
+        (0, functions_1.logTime)(`do task ${this.stringify(task)}`);
         super.do(task);
     }
     executeTask(task) {
         return new Promise((resolve, reject) => {
-            logTime(`exec task ${this.stringify(task)}`);
+            (0, functions_1.logTime)(`exec task ${this.stringify(task)}`);
             setTimeout(() => {
                 resolve();
             }, 100);
