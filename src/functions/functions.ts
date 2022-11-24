@@ -47,8 +47,13 @@ export function capitalize(text: string): string {
 //  tractament d'errors
 // ---------------------------------------------------------------------------------------------------
 
+export interface ErrorObject {
+  code?: number;
+  message: string,
+  data?: any;
+};
 
-export const concatError = (error: any, message: string): { code?: number; message: string } => {
+export const concatError = (error: any, message: string): ErrorObject => {
   const internal = getErrorMessage(error);
   const err = message ? `${message} ${internal}` : internal;
   error = getErrorObject(error);
@@ -59,19 +64,20 @@ export const concatError = (error: any, message: string): { code?: number; messa
 export const getErrorMessage = (error: any): string => {
   if (typeof error === 'string') { return error; }
   if (typeof error?.message === 'string') { return error.message; }
+  if (typeof error?.error?.message === 'string') { return error.error.message; }
   if (typeof error === 'object') { return JSON.stringify(error); }
   if (typeof error?.toString === 'function') { return error.toString(); }
   return `${error}`;
 };
 
-export const getErrorObject = (error: any): { code?: number; message: string } => {
+export const getErrorObject = (error: any): ErrorObject => {
   if (typeof error === 'string') { return { message: error }; }
   if (typeof error === 'object') {
-    if (typeof error.message !== 'string') { error.message = 'unknown'; }
+    if (typeof error.message !== 'string') { error.message = 'Unknown error.'; }
     return error;
   }
   if (typeof error?.toString === 'function') { return { message: error.toString() }; }
-  return { message: 'unknown' };
+  return { message: 'Unknown error.' };
 };
 
 
