@@ -27,4 +27,5 @@ var terminal_1 = require("./terminal/terminal");
 Object.defineProperty(exports, "Terminal", { enumerable: true, get: function () { return terminal_1.Terminal; } });
 __exportStar(require("./utils/file-logger"), exports);
 __exportStar(require("./utils/task-executor"), exports);
+__exportStar(require("./utils/deep-merge"), exports);
 //# sourceMappingURL=index.js.map
