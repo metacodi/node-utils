@@ -5,9 +5,15 @@ export interface Logger extends TaskExecutor {
 export declare class FileLogger extends TaskExecutor implements Logger {
     folder: string;
     logPeriod: 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely';
-    fileExtension: string;
-    constructor(folder: string, logPeriod: 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely', fileExtension?: string);
-    getFileName(): string;
+    fileOptions?: {
+        basename?: string;
+        extension?: string;
+    };
+    constructor(folder: string, logPeriod: 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely', fileOptions?: {
+        basename?: string;
+        extension?: string;
+    });
+    get stamp(): string;
     log(text: string): void;
     protected executeTask(task: string): Promise<void>;
 }

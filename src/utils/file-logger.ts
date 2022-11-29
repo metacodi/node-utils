@@ -17,27 +17,31 @@ export class FileLogger extends TaskExecutor implements Logger {
   constructor(
     public folder: string,
     public logPeriod: 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely',
-    public fileExtension = 'log',
+    public fileOptions?: { basename?: string; extension?: string; }
   ) {
     super({ run: 'sync', add: 'push', consume: 'shift', delay: 0 });
+
+    if (!this.fileOptions) { this.fileOptions = {}; }
+    if (this.fileOptions.basename === undefined) { this.fileOptions.basename = ''; }
+    if (this.fileOptions.extension === undefined) { this.fileOptions.extension = 'log'; }
   }
 
-  getFileName(): string {
+  get stamp(): string {
     const m = moment();
-    let fileName = m.format('YYYY');
-    if (this.logPeriod === 'annually') { return fileName; }
-    fileName += `-${m.format('MM')}`;
-    if (this.logPeriod === 'monthly') { return fileName; }
+    let stamp = m.format('YYYY');
+    if (this.logPeriod === 'annually') { return stamp; }
+    stamp += `-${m.format('MM')}`;
+    if (this.logPeriod === 'monthly') { return stamp; }
     if (this.logPeriod === 'weekly') {
-      fileName += `-w${Math.ceil(+m.format('DD') / 7)}`;
+      stamp += `-w${Math.ceil(+m.format('DD') / 7)}`;
     } else {
-      fileName += `-${m.format('DD')}`;
-      if (this.logPeriod === 'daily') { return fileName; }
-      fileName += ` ${m.format('HH')}h`;
-      if (this.logPeriod === 'hourly') { return `${fileName}h`; }
-      fileName += `${m.format('mm')}m`;
+      stamp += `-${m.format('DD')}`;
+      if (this.logPeriod === 'daily') { return stamp; }
+      stamp += ` ${m.format('HH')}h`;
+      if (this.logPeriod === 'hourly') { return `${stamp}h`; }
+      stamp += `${m.format('mm')}m`;
     }
-    return fileName;
+    return stamp;
   }
 
   log(text: string): void {
@@ -50,7 +54,10 @@ export class FileLogger extends TaskExecutor implements Logger {
       // console.log(`executing task ${task.trim()}`, moment().format('YYYY-MM-DD H:mm:ss.SSS'));
       const folder = this.folder || '.';
       if (folder !== '.' && !fs.existsSync(folder)) { fs.mkdirSync(folder, { recursive: true }); }
-      const url = Resource.normalize(`${folder}/${this.getFileName()}.${this.fileExtension}`);
+      const { stamp } = this;
+      const { basename, extension } = this.fileOptions || {};
+      const filename = `${basename}${stamp}${extension ? '.' : ''}${extension}`;  
+      const url = Resource.normalize(`${folder}/${filename}`);
       // console.log(url);
       Resource.appendFile(url, task);
       resolve();
@@ -92,12 +99,12 @@ export class FileLogger extends TaskExecutor implements Logger {
 // ---------------------------------------------------------------------------------------------------
 
 const test = (path: string) => {
-  console.log('annually => ', (new FileLogger(path, 'annually')).getFileName());
-  console.log('monthly => ', (new FileLogger(path, 'monthly')).getFileName());
-  console.log('weekly => ', (new FileLogger(path, 'weekly')).getFileName());
-  console.log('daily => ', (new FileLogger(path, 'daily')).getFileName());
-  console.log('hourly => ', (new FileLogger(path, 'hourly')).getFileName());
-  console.log('minutely => ', (new FileLogger(path, 'minutely')).getFileName());
+  console.log('annually => ', (new FileLogger(path, 'annually')).stamp);
+  console.log('monthly => ', (new FileLogger(path, 'monthly')).stamp);
+  console.log('weekly => ', (new FileLogger(path, 'weekly')).stamp);
+  console.log('daily => ', (new FileLogger(path, 'daily')).stamp);
+  console.log('hourly => ', (new FileLogger(path, 'hourly')).stamp);
+  console.log('minutely => ', (new FileLogger(path, 'minutely')).stamp);
   Terminal.line();
   const exec = new FileLogger('', 'minutely');
   ['1', '2', '3', '4', '5'].map(task => exec.log(task));
