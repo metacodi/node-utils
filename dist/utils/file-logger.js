@@ -68,7 +68,7 @@ class FileLogger extends task_executor_1.TaskExecutor {
             }
             stamp += ` ${m.format('HH')}h`;
             if (this.logPeriod === 'hourly') {
-                return `${stamp}h`;
+                return stamp;
             }
             stamp += `${m.format('mm')}m`;
         }

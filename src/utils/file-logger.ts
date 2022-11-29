@@ -17,7 +17,7 @@ export class FileLogger extends TaskExecutor implements Logger {
   constructor(
     public folder: string,
     public logPeriod: 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely',
-    public fileOptions?: { basename?: string; extension?: string; }
+    public fileOptions?: { basename?: string; extension?: string }
   ) {
     super({ run: 'sync', add: 'push', consume: 'shift', delay: 0 });
 
@@ -38,7 +38,7 @@ export class FileLogger extends TaskExecutor implements Logger {
       stamp += `-${m.format('DD')}`;
       if (this.logPeriod === 'daily') { return stamp; }
       stamp += ` ${m.format('HH')}h`;
-      if (this.logPeriod === 'hourly') { return `${stamp}h`; }
+      if (this.logPeriod === 'hourly') { return stamp; }
       stamp += `${m.format('mm')}m`;
     }
     return stamp;
@@ -95,7 +95,7 @@ export class FileLogger extends TaskExecutor implements Logger {
 // ---------------------------------------------------------------------------------------------------
 //  test
 // ---------------------------------------------------------------------------------------------------
-//  npx ts-node logger.ts
+//  npx ts-node src/utils/file-logger.ts
 // ---------------------------------------------------------------------------------------------------
 
 const test = (path: string) => {
