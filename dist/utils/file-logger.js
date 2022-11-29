@@ -32,47 +32,62 @@ const moment_1 = __importDefault(require("moment"));
 const terminal_1 = require("../terminal/terminal");
 const resource_1 = require("../resource/resource");
 const task_executor_1 = require("./task-executor");
+;
 class FileLogger extends task_executor_1.TaskExecutor {
-    constructor(folder, logPeriod, fileOptions) {
+    constructor(folder, options) {
         super({ run: 'sync', add: 'push', consume: 'shift', delay: 0 });
         this.folder = folder;
-        this.logPeriod = logPeriod;
-        this.fileOptions = fileOptions;
-        if (!this.fileOptions) {
-            this.fileOptions = {};
+        this.options = options;
+        if (!options) {
+            options = {};
         }
-        if (this.fileOptions.basename === undefined) {
-            this.fileOptions.basename = '';
+        if (options.basename === undefined) {
+            options.basename = '';
         }
-        if (this.fileOptions.extension === undefined) {
-            this.fileOptions.extension = 'log';
+        if (options.extension === undefined) {
+            options.extension = 'log';
         }
+        if (options.stamp === undefined) {
+            options.stamp = {};
+        }
+        this.options = options;
     }
     get stamp() {
-        const m = (0, moment_1.default)();
-        let stamp = m.format('YYYY');
-        if (this.logPeriod === 'annually') {
+        var _a;
+        const { format, period } = (_a = this.options) === null || _a === void 0 ? void 0 : _a.stamp;
+        if (format) {
+            const stamp = (0, moment_1.default)().format(format);
             return stamp;
-        }
-        stamp += `-${m.format('MM')}`;
-        if (this.logPeriod === 'monthly') {
-            return stamp;
-        }
-        if (this.logPeriod === 'weekly') {
-            stamp += `-w${Math.ceil(+m.format('DD') / 7)}`;
         }
         else {
-            stamp += `-${m.format('DD')}`;
-            if (this.logPeriod === 'daily') {
+            if (!period) {
+                return '';
+            }
+            const m = (0, moment_1.default)();
+            let stamp = m.format('YYYY');
+            if (period === 'annually') {
                 return stamp;
             }
-            stamp += ` ${m.format('HH')}h`;
-            if (this.logPeriod === 'hourly') {
+            stamp += `-${m.format('MM')}`;
+            if (period === 'monthly') {
                 return stamp;
             }
-            stamp += `${m.format('mm')}m`;
+            if (period === 'weekly') {
+                stamp += `-w${Math.ceil(+m.format('DD') / 7)}`;
+            }
+            else {
+                stamp += `-${m.format('DD')}`;
+                if (period === 'daily') {
+                    return stamp;
+                }
+                stamp += ` ${m.format('HH')}h`;
+                if (period === 'hourly') {
+                    return stamp;
+                }
+                stamp += `${m.format('mm')}m`;
+            }
+            return stamp;
         }
-        return stamp;
     }
     log(text) {
         super.do(text + '\n');
@@ -84,7 +99,7 @@ class FileLogger extends task_executor_1.TaskExecutor {
                 fs.mkdirSync(folder, { recursive: true });
             }
             const { stamp } = this;
-            const { basename, extension } = this.fileOptions || {};
+            const { basename, extension } = this.options || {};
             const filename = `${basename}${stamp}${extension ? '.' : ''}${extension}`;
             const url = resource_1.Resource.normalize(`${folder}/${filename}`);
             resource_1.Resource.appendFile(url, task);
@@ -94,14 +109,15 @@ class FileLogger extends task_executor_1.TaskExecutor {
 }
 exports.FileLogger = FileLogger;
 const test = (path) => {
-    console.log('annually => ', (new FileLogger(path, 'annually')).stamp);
-    console.log('monthly => ', (new FileLogger(path, 'monthly')).stamp);
-    console.log('weekly => ', (new FileLogger(path, 'weekly')).stamp);
-    console.log('daily => ', (new FileLogger(path, 'daily')).stamp);
-    console.log('hourly => ', (new FileLogger(path, 'hourly')).stamp);
-    console.log('minutely => ', (new FileLogger(path, 'minutely')).stamp);
+    console.log('annually => ', (new FileLogger(path, { stamp: { period: 'annually' } })).stamp);
+    console.log('monthly => ', (new FileLogger(path, { stamp: { period: 'monthly' } })).stamp);
+    console.log('weekly => ', (new FileLogger(path, { stamp: { period: 'weekly' } })).stamp);
+    console.log('daily => ', (new FileLogger(path, { stamp: { period: 'daily' } })).stamp);
+    console.log('hourly => ', (new FileLogger(path, { stamp: { period: 'hourly' } })).stamp);
+    console.log('minutely => ', (new FileLogger(path, { stamp: { period: 'minutely' } })).stamp);
+    console.log('format => ', (new FileLogger(path, { stamp: { format: 'MMM DD YYYY' } })).stamp);
     terminal_1.Terminal.line();
-    const exec = new FileLogger('', 'minutely');
+    const exec = new FileLogger('', { stamp: { period: 'minutely' } });
     ['1', '2', '3', '4', '5'].map(task => exec.log(task));
     setTimeout(() => {
         exec.log(`Aquesta tasca s'hauria d'escriure en un altre arxiu`);

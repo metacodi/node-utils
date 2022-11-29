@@ -12,7 +12,9 @@ export interface TaskExecutorOptions {
   add?: 'unshift' | 'push';
   consume?: 'shift' | 'pop';
   run?: 'sync' | 'async';
+  /** Quan `run === 'sync'`, indica el nombre de milisegons que es deixaran passar entre l'execució d'una tasca i la següent tasca. */
   delay?: number;
+  /** Limita el nombre de tasques que es podran executar durant el periode actual. */
   maxQuantity?: number;
   period?: number;
 };
