@@ -1,6 +1,6 @@
 {
   "name": "@metacodi/node-utils",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -36,7 +36,7 @@
   "devDependencies": {
     "@types/ftp": "^0.3.33",
     "@types/mysql2": "github:types/mysql2",
-    "@types/node": "^18.7.23",
+    "@types/node": "^18.11.19",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
     "eslint": "^8.24.0",
