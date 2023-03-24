@@ -166,7 +166,7 @@ export const upgradeDependency = async (packageName: string, type?: '--save-dev'
   const pkg = Resource.open(`package.json`);
   const oldVersion = pkg[section][packageName];
   Terminal.logInline(`- ${chalk.green(packageName)}: ...`);
-  await Terminal.run(`npm i ${packageName}`);
+  await Terminal.run(`npm i ${packageName} ${type}`);
   const pkg2 = Resource.open(`package.json`);
   const version = pkg2[section][packageName];
   const changed = version !== oldVersion;
