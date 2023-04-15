@@ -62,14 +62,13 @@ export class Terminal {
     return new Promise<any>((resolve: any, reject: any) => {
 
       if (verbose) {
-
         Terminal.renderChalk(command, { color, bold: true });
         const parts = command.split(' ');
         const args = parts.slice(1);
         const proc = spawn(parts[0], args, { stdio, shell: true });
 
         // Quan la sortida standard (stdio) està en 'inherit', el resultat surt directament per consola.
-        // Quan la sortida està en 'pipe', els handlers (stdout, stderr) s'activen i des d'allà escribim inmediatament el resultat per no fer esperar l'usuari a que s'acibi el procés.
+        // Quan la sortida està en 'pipe', els handlers (stdout, stderr) s'activen i des d'allà escribim inmediatament el resultat per no fer esperar l'usuari a que s'acabi el procés.
         let stdout = ''; if (proc.stdout) { proc.stdout.on('data', (data: any) => { stdout += data.toString(); process.stdout.write(chalk.green(data.toString())); }); }
         let stderr = ''; if (proc.stderr) { proc.stderr.on('data', (data: any) => { stderr += data.toString(); process.stdout.write(chalk.yellow(data.toString())); }); }
         proc.once('exit', (code: number, signal: NodeJS.Signals) => {
@@ -80,9 +79,11 @@ export class Terminal {
       } else {
 
         exec(command, (error: ExecException, stdout: string, stderr: string) => {
-          // Nomnés sortim amb error quan hi ha un codi d'error i un texte d'error.
-          if (!!error && !!error.code && !!stderr) {
-            reject(stderr);
+          // Només sortim amb error quan hi ha un codi d'error.
+          if (!!error && !!error.code) {
+            // NOTA: El text d'error en un subprocés pot arribar a través de la sortida estándar (stdout).
+            const errorText = stderr || stdout || error?.message || error;
+            reject(`Command failed: ${chalk.bold(command)}\n${errorText}`);
           } else {
             resolve(stdout);
           }

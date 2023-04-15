@@ -161,7 +161,7 @@ const upgradeDependency = (packageName, type) => __awaiter(void 0, void 0, void 
     const pkg = resource_1.Resource.open(`package.json`);
     const oldVersion = pkg[section][packageName];
     terminal_1.Terminal.logInline(`- ${chalk_1.default.green(packageName)}: ...`);
-    yield terminal_1.Terminal.run(`npm i ${packageName}`);
+    yield terminal_1.Terminal.run(`npm i ${packageName} ${type}`);
     const pkg2 = resource_1.Resource.open(`package.json`);
     const version = pkg2[section][packageName];
     const changed = version !== oldVersion;

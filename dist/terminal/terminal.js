@@ -49,8 +49,9 @@ class Terminal {
                 }
                 else {
                     (0, child_process_1.exec)(command, (error, stdout, stderr) => {
-                        if (!!error && !!error.code && !!stderr) {
-                            reject(stderr);
+                        if (!!error && !!error.code) {
+                            const errorText = stderr || stdout || (error === null || error === void 0 ? void 0 : error.message) || error;
+                            reject(`Command failed: ${chalk_1.default.bold(command)}\n${errorText}`);
                         }
                         else {
                             resolve(stdout);
