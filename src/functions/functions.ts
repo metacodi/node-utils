@@ -150,10 +150,31 @@ export const upgradeMajorVersion = (version: string): string => {
   return newVersion.join('.');
 }
 
-export const incrementPackageVersion = () => {
+/** Incrementa la versió de l'arxiu `package.json`.
+ *
+ * Si no s'estableix l'argument 'level' s'utilitzarà 'patch' com a valor per defecte.
+ *
+ * {@link https://docs.npmjs.com/about-semantic-versioning [npm]: About semantic versioning}
+ * {@link https://semver.org/ Semantic Versioning 2.0.0}
+ */
+export const incrementPackageVersion = (level?: 'major' | 'minor' | 'patch') => {
+  if (level === undefined) { level = 'patch'; }
   const pkg = Resource.open('package.json');
   const version: string[] = pkg.version.split('.');
-  version[2] = `${+version[2] + 1}`;
+  switch (level) {
+    case 'patch':
+      version[2] = `${+version[2] + 1}`;
+      break;
+    case 'minor':
+      version[1] = `${+version[1] + 1}`;
+      version[2] = '0';
+      break;
+    case 'major':
+      version[0] = `${+version[0] + 1}`;
+      version[1] = '0';
+      version[2] = '0';
+      break;
+  }
   pkg.version = version.join('.');
   Terminal.log('Incremented ' + chalk.bold('package.json') + ' patch version to:', Terminal.green(pkg.version));
   Resource.save('package.json', pkg);
