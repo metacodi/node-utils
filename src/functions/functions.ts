@@ -151,6 +151,8 @@ export const upgradeMajorVersion = (version: string): string => {
 }
 
 /** Incrementa la versió de l'arxiu `package.json`.
+ * 
+ * > S'espera que la carpeta actual contingui l'arxiu `package.json`
  *
  * Si no s'estableix l'argument 'level' s'utilitzarà 'patch' com a valor per defecte.
  *
@@ -160,24 +162,10 @@ export const upgradeMajorVersion = (version: string): string => {
 export const incrementPackageVersion = (level?: 'major' | 'minor' | 'patch') => {
   if (level === undefined) { level = 'patch'; }
   const pkg = Resource.open('package.json');
-  const version: string[] = pkg.version.split('.');
-  switch (level) {
-    case 'patch':
-      version[2] = `${+version[2] + 1}`;
-      break;
-    case 'minor':
-      version[1] = `${+version[1] + 1}`;
-      version[2] = '0';
-      break;
-    case 'major':
-      version[0] = `${+version[0] + 1}`;
-      version[1] = '0';
-      version[2] = '0';
-      break;
-  }
-  pkg.version = version.join('.');
-  Terminal.log('Incremented ' + chalk.bold('package.json') + ' patch version to:', Terminal.green(pkg.version));
+  pkg.version = level === 'patch' ? upgradePatchVersion(pkg.version) : (level === 'minor' ? upgradeMinorVersion(pkg.version) : upgradeMajorVersion(pkg.version) );
   Resource.save('package.json', pkg);
+  Terminal.log(`Incremented ${chalk.bold('package.json')} ${level} version to:`, Terminal.green(pkg.version));
+  return `${pkg.version}`;
 }
 
 export const upgradeDependency = async (packageName: string, type?: '--save-dev' | '--save-prod' | '--save-peer' | '-D') => {
