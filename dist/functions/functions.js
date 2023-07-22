@@ -141,13 +141,15 @@ const upgradeMajorVersion = (version) => {
     return newVersion.join('.');
 };
 exports.upgradeMajorVersion = upgradeMajorVersion;
-const incrementPackageVersion = () => {
+const incrementPackageVersion = (level) => {
+    if (level === undefined) {
+        level = 'patch';
+    }
     const pkg = resource_1.Resource.open('package.json');
-    const version = pkg.version.split('.');
-    version[2] = `${+version[2] + 1}`;
-    pkg.version = version.join('.');
-    terminal_1.Terminal.log('Incremented ' + chalk_1.default.bold('package.json') + ' patch version to:', terminal_1.Terminal.green(pkg.version));
+    pkg.version = level === 'patch' ? (0, exports.upgradePatchVersion)(pkg.version) : (level === 'minor' ? (0, exports.upgradeMinorVersion)(pkg.version) : (0, exports.upgradeMajorVersion)(pkg.version));
     resource_1.Resource.save('package.json', pkg);
+    terminal_1.Terminal.log(`Incremented ${chalk_1.default.bold('package.json')} ${level} version to:`, terminal_1.Terminal.green(pkg.version));
+    return `${pkg.version}`;
 };
 exports.incrementPackageVersion = incrementPackageVersion;
 const upgradeDependency = (packageName, type) => __awaiter(void 0, void 0, void 0, function* () {

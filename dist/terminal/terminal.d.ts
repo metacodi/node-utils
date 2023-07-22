@@ -30,8 +30,14 @@ export declare class Terminal {
     static error(error: any, exit?: boolean): void;
     static file(fileName: string, relativeTo?: string): string;
     static relative(from: string, to: string): number;
-    static success(message: string, check?: string): void;
-    static fail(error: string, check?: string): void;
+    static success(message: string, options?: {
+        check: string;
+        indent: string | number;
+    }): void;
+    static fail(error: string, options?: {
+        check: string;
+        indent: string | number;
+    }): void;
     static clearLine(): void;
     static line(options?: ChalkOptions): void;
     static double(options?: ChalkOptions): void;

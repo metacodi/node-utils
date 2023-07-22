@@ -123,11 +123,21 @@ class Terminal {
         }
         return i - 1;
     }
-    static success(message, check = '√') {
+    static success(message, options) {
+        if (!options) {
+            options = {};
+        }
+        const check = options.check === undefined ? '√' : options.check;
+        const indent = options.indent === undefined ? '' : (typeof options.indent === 'number' ? Array(options.indent).join(' ') : options.indent);
         Terminal.clearLine();
-        Terminal.log(`${chalk_1.default.bold.green(check)} ${message}`);
+        Terminal.log(`${indent}${chalk_1.default.bold.green(check)} ${message}`);
     }
-    static fail(error, check = 'x') {
+    static fail(error, options) {
+        if (!options) {
+            options = {};
+        }
+        const check = options.check === undefined ? 'x' : options.check;
+        const indent = options.indent === undefined ? '' : (typeof options.indent === 'number' ? Array(options.indent).join(' ') : options.indent);
         Terminal.clearLine();
         Terminal.log(`${chalk_1.default.bold.red(check)} ${error}`);
     }

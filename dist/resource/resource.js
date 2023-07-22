@@ -51,7 +51,7 @@ class Resource {
         return fileName.replace(new RegExp(find, 'g'), replace);
     }
     static split(value) {
-        return Resource.normalize(value).replace('\\', '/').split('/');
+        return Resource.normalize(value).replace(/\\/g, '/').split('/');
     }
     static join(values) {
         return Resource.normalize(values.join('/'));

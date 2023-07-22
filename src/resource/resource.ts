@@ -50,7 +50,7 @@ export class Resource {
    * @category value
    */
   static split(value: string): string[] {
-    return Resource.normalize(value).replace('\\', '/').split('/');
+    return Resource.normalize(value).replace(/\\/g, '/').split('/');
   }
 
   /** Retorna un camí a partir dels seus segments normalitzat per la plataforma actual.
