@@ -139,7 +139,7 @@ class Terminal {
         const check = options.check === undefined ? 'x' : options.check;
         const indent = options.indent === undefined ? '' : (typeof options.indent === 'number' ? Array(options.indent).join(' ') : options.indent);
         Terminal.clearLine();
-        Terminal.log(`${chalk_1.default.bold.red(check)} ${error}`);
+        Terminal.log(`${indent}${chalk_1.default.bold.red(check)} ${error}`);
     }
     static clearLine() {
         process.stdout.clearLine(0);

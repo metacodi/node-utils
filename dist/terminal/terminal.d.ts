@@ -31,12 +31,12 @@ export declare class Terminal {
     static file(fileName: string, relativeTo?: string): string;
     static relative(from: string, to: string): number;
     static success(message: string, options?: {
-        check: string;
-        indent: string | number;
+        check?: string;
+        indent?: string | number;
     }): void;
     static fail(error: string, options?: {
-        check: string;
-        indent: string | number;
+        check?: string;
+        indent?: string | number;
     }): void;
     static clearLine(): void;
     static line(options?: ChalkOptions): void;

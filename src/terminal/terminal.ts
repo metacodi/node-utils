@@ -187,7 +187,7 @@ export class Terminal {
    * Escriu un text amb un check verd davant.
    * @category Test result
    */
-  static success(message: string, options?: { check: string, indent: string | number }): void {
+  static success(message: string, options?: { check?: string, indent?: string | number }): void {
     if (!options) { options = {} as any; }
     const check = options.check === undefined ? '√' : options.check;
     const indent = options.indent === undefined ? '' : (typeof options.indent === 'number' ? Array(options.indent).join(' ') : options.indent);
@@ -199,12 +199,12 @@ export class Terminal {
    * Escriu un text amb una creu vermella davant.
    * @category Test result
    */
-  static fail(error: string, options?: { check: string, indent: string | number }): void {
+  static fail(error: string, options?: { check?: string, indent?: string | number }): void {
     if (!options) { options = {} as any; }
     const check = options.check === undefined ? 'x' : options.check;
     const indent = options.indent === undefined ? '' : (typeof options.indent === 'number' ? Array(options.indent).join(' ') : options.indent);
     Terminal.clearLine();
-    Terminal.log(`${chalk.bold.red(check)} ${error}`);
+    Terminal.log(`${indent}${chalk.bold.red(check)} ${error}`);
   }
 
   static clearLine() {
