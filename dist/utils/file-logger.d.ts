@@ -1,5 +1,5 @@
 import { TaskExecutor, TaskExecutorOptions } from './task-executor';
-export declare type FileperiodStamp = 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely';
+export declare type FilePeriodStamp = 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely';
 export interface Logger extends TaskExecutor {
     log(text: string): void;
 }
@@ -7,7 +7,7 @@ export interface FileLoggerOptions extends TaskExecutorOptions {
     folder?: string;
     basename?: string;
     formatStamp?: string;
-    periodStamp?: FileperiodStamp;
+    periodStamp?: FilePeriodStamp;
     extension?: string;
 }
 export declare class FileLogger extends TaskExecutor implements Logger {

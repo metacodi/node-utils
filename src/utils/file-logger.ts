@@ -6,7 +6,7 @@ import { Resource } from '../resource/resource';
 import { TaskExecutor, TaskExecutorOptions } from './task-executor';
 
 
-export type FileperiodStamp = 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely';
+export type FilePeriodStamp = 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely';
 
 export interface Logger extends TaskExecutor { log(text: string): void }
 
@@ -16,7 +16,7 @@ export interface FileLoggerOptions extends TaskExecutorOptions {
   /** Adds a moment formatted stamp to the file name. */
   formatStamp?: string;
   /** Adds a moment formatted stamp to the file name. */
-  periodStamp?: FileperiodStamp;
+  periodStamp?: FilePeriodStamp;
   /** Indicates the file extension. In order to avoid extension, set value to empty string (''). */
   extension?: string;
 };
@@ -54,7 +54,7 @@ export interface FileLoggerOptions extends TaskExecutorOptions {
  *   folder?: string;
  *   basename?: string;
  *   formatStamp?: string;
- *   periodStamp?: FileperiodStamp;
+ *   periodStamp?: FilePeriodStamp;
  *   extension?: string;
  * };
  * ```

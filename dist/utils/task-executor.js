@@ -9,6 +9,7 @@ class TaskExecutor {
         this.queue = [];
         this.executingTask = false;
         this.isSleeping = false;
+        this.executionPaused = false;
         this.changeLimitsPending = false;
         this.countPeriod = 0;
         this.intervalSubscription = undefined;
@@ -40,6 +41,9 @@ class TaskExecutor {
         this.executeQueue();
     }
     executeQueue() {
+        if (this.executionPaused) {
+            return;
+        }
         if (this.executingTask) {
             return;
         }
@@ -57,7 +61,7 @@ class TaskExecutor {
                 }
             }
             else {
-                while (this.hasTasksToConsume && !this.isSleeping) {
+                while (this.hasTasksToConsume && !this.isSleeping && !this.executionPaused) {
                     const task = this.consumeTask();
                     if (!!this.period) {
                         this.countPeriod += 1;
@@ -68,7 +72,18 @@ class TaskExecutor {
             }
         }
     }
+    pauseQueue() {
+        this.executionPaused = true;
+        this.stopTasksInterval();
+    }
+    resumeQueue() {
+        this.executionPaused = false;
+        this.executeQueue();
+    }
     nextTask() {
+        if (this.executionPaused) {
+            return;
+        }
         const task = this.consumeTask();
         if (!!this.period) {
             this.countPeriod += 1;

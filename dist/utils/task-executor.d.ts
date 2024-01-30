@@ -17,6 +17,7 @@ export declare abstract class TaskExecutor {
     queue: any[];
     executingTask: boolean;
     isSleeping: boolean;
+    executionPaused: boolean;
     changeLimitsPending: boolean;
     countPeriod: number;
     intervalSubscription: NodeJS.Timer;
@@ -24,6 +25,8 @@ export declare abstract class TaskExecutor {
     do(task: any): void;
     protected executeQueue(): void;
     protected abstract executeTask(task: any): Promise<any>;
+    pauseQueue(): void;
+    resumeQueue(): void;
     protected nextTask(): void;
     protected startTasksInterval(): void;
     protected stopTasksInterval(): void;

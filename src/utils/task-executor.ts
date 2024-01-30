@@ -22,9 +22,11 @@ export interface TaskExecutorOptions {
 export abstract class TaskExecutor {
   /** Cua de tasques. */
   queue: any[] = [];
-  /** Indicador d'estat per l'accés a la cua. */
+  /** Indica quan hi ha una tasca en execució. */
   executingTask = false;
   isSleeping = false;
+  /** Indica quan l'execució de la cua està en pausa. */
+  executionPaused = false;
   /** Indica quan hi ha una operació d'actualització de límits a l'espera. */
   changeLimitsPending = false;
   /** Quantitat de consultes realitzades durant el periode actual. */
@@ -54,6 +56,8 @@ export abstract class TaskExecutor {
   }
 
   protected executeQueue() {
+    // Comprovem que no estigui en pausa.
+    if (this.executionPaused) { return; }
     // Evitem els solapaments mentre s'executa una altra tasca.
     if (this.executingTask) { return; }
     // Mentre existeixin tasques pendents i no haguem superat el màxim limitat.
@@ -69,7 +73,7 @@ export abstract class TaskExecutor {
 
       } else {
         // async: paral·lel
-        while (this.hasTasksToConsume && !this.isSleeping) {
+        while (this.hasTasksToConsume && !this.isSleeping && !this.executionPaused) {
           // Executem la següent tasca de la cua.
           const task = this.consumeTask();
           if (!!this.period) { this.countPeriod += 1; }
@@ -84,10 +88,29 @@ export abstract class TaskExecutor {
   /** Procediment que s'ha d'implementar a la classe heredada. */
   protected abstract executeTask(task: any): Promise<any>;
 
+  //  pause . resume
+  // ---------------------------------------------------------------------------------------------------
+
+  pauseQueue() {
+    // Establim l'indicador d'estat.
+    this.executionPaused = true;
+    // Aturem l'interval.
+    this.stopTasksInterval();
+  }
+
+  resumeQueue() {
+    // Establim l'indicador d'estat.
+    this.executionPaused = false;
+    // Aturem l'interval.
+    this.executeQueue();
+  }
+
   //  sync: execució seqüencial
   // ---------------------------------------------------------------------------------------------------
 
   protected nextTask(): void {
+    // Comprovem que no estigui en pausa.
+    if (this.executionPaused) { return; }
     // Executem la següent tasca de la cua pel principi o pel final.
     const task = this.consumeTask();
     // Incrementem el comptador.
