@@ -101,7 +101,7 @@ export abstract class TaskExecutor {
   resumeQueue() {
     // Establim l'indicador d'estat.
     this.executionPaused = false;
-    // Aturem l'interval.
+    // Reprenem l'execució.
     this.executeQueue();
   }
 

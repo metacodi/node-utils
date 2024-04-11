@@ -42,6 +42,24 @@ export function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 }
 
+/** Devuelve el texto normalizado, sin acentos. Ej: 'àëî' => 'aei' */
+export const normalizeText = (text: any): string => String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+/** Devuelve el número de teléfono sin espacios ni paréntesis */
+export const normalizePhoneNumber = (text: any): string => String(text || '').replace(/\s|-|\.|\(|\)/g, '').replace(/^\+/, '00').replace(/^0034/, '');
+
+/** Ex: 'FarmaciesList.Component' => 'farmàcies-list-component' */
+export const toKebabCase = (s: string) => s ? s.trim().split(/[\s\.\-\_\:]/).map(s => s.replace(/([A-Z])/g, '-$1').toLocaleLowerCase()).join('-').replace(/^-/, '').replace(/--/, '-') : '';
+
+/** Ex: 'FarmàciesList.Component' => 'farmacies-list-component' */
+export const toNormalizedKebabCase = (text: any) => toKebabCase(String(text)).split('-').map(s => normalizeText(s).replace(/[^\w]/g, '')).join('-');
+
+/** Ex: 'facturas-list.component' => 'FacturasList.Component' */
+export const toPascalCase = (s: string) => s ? `${s.charAt(0).toUpperCase()}${s.slice(1).replace(/[-_ ][A-Za-z]/g, match => match.replace(/[-_ ]/g, '').toUpperCase())}` : '';
+
+/** Ex: 'farmàcies-list.component' => 'FarmaciesList.Component' */
+export const toNormalizedPascalCase = (s: string) => s ? `${normalizeText(s).charAt(0).toUpperCase()}${normalizeText(s).slice(1).replace(/[-_ ][A-Za-z]/g, match => match.replace(/[-_ ]/g, '').toUpperCase())}` : '';
+
 
 // ---------------------------------------------------------------------------------------------------
 //  tractament d'errors
@@ -80,6 +98,40 @@ export const getErrorObject = (error: any): ErrorObject => {
   return { message: 'Unknown error.' };
 };
 
+export const parseError = (error: any): string => {
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (typeof error === 'object') {
+    if (Array.isArray(error)) {
+      return `[${error.map(e => parseError(e)).join(', ')}]`;
+    } else {
+      const err: string[] = [];
+      Object.keys(error).map(key => {
+        if (typeof error[key] === 'string') { err.push(`"${[key]}":"${error[key]}"`); }
+        else if (typeof error[key] === 'number') { err.push(`"${[key]}":${error[key]}`); }
+        // Pels error que podem anar passant en cascada a través de successius try-catch anidats.
+        else if (key === 'error') { err.push(`"${[key]}":${parseError(error[key])}`); }
+        // Qualsevol altra valor s'intentarà expressar en format JSON.
+        else if (typeof error[key] !== 'function') {
+          try {
+            err.push(`"${[key]}":${JSON.stringify(error[key])}`);
+          } catch (stringifyError: any) {
+            // Ignorem els errors de referència circular durant stringify.
+            // err.push(`"${[key]}":${this.parseError(stringifyError)}`);
+            err.push(`"${[key]}":"Error converting circular structure to JSON."`);
+          }
+        }
+        // else if (typeof error[key] !== 'function') { err.push(`"${[key]}":${parseError(error[key])}`); }
+      });
+      // const proto = Object.getPrototypeOf(error);
+      // if (proto?.constructor?.name !== 'Object') { err.push(...parseError(proto)); }
+      if (!Object.keys(error).includes('message') && typeof error?.message === 'string') { err.push(`"message":"${error.message}"`); }
+      return `{${err.join(',')}}`;
+    }
+  }
+  return 'Unknown';
+}
 
 
 // ---------------------------------------------------------------------------------------------------

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.upgradeDependency = exports.incrementPackageVersion = exports.upgradeMajorVersion = exports.upgradeMinorVersion = exports.upgradePatchVersion = exports.applyFilterPattern = exports.getErrorObject = exports.getErrorMessage = exports.concatError = exports.capitalize = exports.round = exports.logTime = exports.timestamp = void 0;
+exports.upgradeDependency = exports.incrementPackageVersion = exports.upgradeMajorVersion = exports.upgradeMinorVersion = exports.upgradePatchVersion = exports.applyFilterPattern = exports.parseError = exports.getErrorObject = exports.getErrorMessage = exports.concatError = exports.toNormalizedPascalCase = exports.toPascalCase = exports.toNormalizedKebabCase = exports.toKebabCase = exports.normalizePhoneNumber = exports.normalizeText = exports.capitalize = exports.round = exports.logTime = exports.timestamp = void 0;
 const chalk_1 = __importDefault(require("chalk"));
 const moment_1 = __importDefault(require("moment"));
 const resource_1 = require("../resource/resource");
@@ -47,6 +47,18 @@ function capitalize(text) {
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 }
 exports.capitalize = capitalize;
+const normalizeText = (text) => String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+exports.normalizeText = normalizeText;
+const normalizePhoneNumber = (text) => String(text || '').replace(/\s|-|\.|\(|\)/g, '').replace(/^\+/, '00').replace(/^0034/, '');
+exports.normalizePhoneNumber = normalizePhoneNumber;
+const toKebabCase = (s) => s ? s.trim().split(/[\s\.\-\_\:]/).map(s => s.replace(/([A-Z])/g, '-$1').toLocaleLowerCase()).join('-').replace(/^-/, '').replace(/--/, '-') : '';
+exports.toKebabCase = toKebabCase;
+const toNormalizedKebabCase = (text) => (0, exports.toKebabCase)(String(text)).split('-').map(s => (0, exports.normalizeText)(s).replace(/[^\w]/g, '')).join('-');
+exports.toNormalizedKebabCase = toNormalizedKebabCase;
+const toPascalCase = (s) => s ? `${s.charAt(0).toUpperCase()}${s.slice(1).replace(/[-_ ][A-Za-z]/g, match => match.replace(/[-_ ]/g, '').toUpperCase())}` : '';
+exports.toPascalCase = toPascalCase;
+const toNormalizedPascalCase = (s) => s ? `${(0, exports.normalizeText)(s).charAt(0).toUpperCase()}${(0, exports.normalizeText)(s).slice(1).replace(/[-_ ][A-Za-z]/g, match => match.replace(/[-_ ]/g, '').toUpperCase())}` : '';
+exports.toNormalizedPascalCase = toNormalizedPascalCase;
 ;
 const concatError = (error, message) => {
     const internal = (0, exports.getErrorMessage)(error);
@@ -92,6 +104,44 @@ const getErrorObject = (error) => {
     return { message: 'Unknown error.' };
 };
 exports.getErrorObject = getErrorObject;
+const parseError = (error) => {
+    if (typeof error === 'string') {
+        return error;
+    }
+    if (typeof error === 'object') {
+        if (Array.isArray(error)) {
+            return `[${error.map(e => (0, exports.parseError)(e)).join(', ')}]`;
+        }
+        else {
+            const err = [];
+            Object.keys(error).map(key => {
+                if (typeof error[key] === 'string') {
+                    err.push(`"${[key]}":"${error[key]}"`);
+                }
+                else if (typeof error[key] === 'number') {
+                    err.push(`"${[key]}":${error[key]}`);
+                }
+                else if (key === 'error') {
+                    err.push(`"${[key]}":${(0, exports.parseError)(error[key])}`);
+                }
+                else if (typeof error[key] !== 'function') {
+                    try {
+                        err.push(`"${[key]}":${JSON.stringify(error[key])}`);
+                    }
+                    catch (stringifyError) {
+                        err.push(`"${[key]}":"Error converting circular structure to JSON."`);
+                    }
+                }
+            });
+            if (!Object.keys(error).includes('message') && typeof (error === null || error === void 0 ? void 0 : error.message) === 'string') {
+                err.push(`"message":"${error.message}"`);
+            }
+            return `{${err.join(',')}}`;
+        }
+    }
+    return 'Unknown';
+};
+exports.parseError = parseError;
 function applyFilterPattern(text, pattern) {
     if (!pattern || !text) {
         return true;

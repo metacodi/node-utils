@@ -3,6 +3,12 @@ export declare const timestamp: (inp?: moment.MomentInput) => string;
 export declare const logTime: (message?: any, ...optionalParams: any[]) => void;
 export declare function round(value: number, decimals?: number): number;
 export declare function capitalize(text: string): string;
+export declare const normalizeText: (text: any) => string;
+export declare const normalizePhoneNumber: (text: any) => string;
+export declare const toKebabCase: (s: string) => string;
+export declare const toNormalizedKebabCase: (text: any) => string;
+export declare const toPascalCase: (s: string) => string;
+export declare const toNormalizedPascalCase: (s: string) => string;
 export interface ErrorObject {
     code?: number;
     message: string;
@@ -11,6 +17,7 @@ export interface ErrorObject {
 export declare const concatError: (error: any, message: string) => ErrorObject;
 export declare const getErrorMessage: (error: any) => string;
 export declare const getErrorObject: (error: any) => ErrorObject;
+export declare const parseError: (error: any) => string;
 export declare type FilterPatternType = string | RegExp | ((text: string) => boolean) | {
     test: RegExp | ((text: string) => boolean);
 };
