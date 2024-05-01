@@ -64,9 +64,25 @@ export const syncRow = async (conn: PoolConnection, table: string, row: any, pri
   return await conn.query(query);
 }
 
-/** Retorna la data de l'última actualització d'una taula. */
+/** Retorna la data de l'última actualització de la taula indicada. */
 export const getTableLastUpdate = async (conn: PoolConnection | Pool, tableName: string): Promise<string> => {
   const [rows] = await conn.query(`SELECT UPDATE_TIME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${tableName}'`);
   const result = Array.isArray(rows) ? rows as any[] : [rows];
   return Promise.resolve(result.length ? moment(result[0].UPDATE_TIME).format('YYYY-MM-DD HH:mm:ss') : undefined);
+}
+
+/** Retorna les dates de la darrera creació i actualització de la taula indicada. */
+export const getTableAuditTimes = async (conn: PoolConnection | Pool, tableName: string): Promise<{ created: string, updated: string }> => {
+  const [rows] = await conn.query(`SELECT CREATE_TIME, UPDATE_TIME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${tableName}'`);
+  const result = Array.isArray(rows) ? rows as any[] : [rows];
+  if (result.length) {
+    const response = {
+      created: moment(result[0].CREATE_TIME).format('YYYY-MM-DD HH:mm:ss'),
+      updated: moment(result[0].UPDATE_TIME).format('YYYY-MM-DD HH:mm:ss'),
+    };
+    return response;
+  } else {
+    return undefined;
+
+  }
 }

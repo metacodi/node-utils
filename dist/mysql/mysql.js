@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTableLastUpdate = exports.syncRow = exports.interpolateQuery = exports.quoteEntityName = exports.convertToSql = void 0;
+exports.getTableAuditTimes = exports.getTableLastUpdate = exports.syncRow = exports.interpolateQuery = exports.quoteEntityName = exports.convertToSql = void 0;
 const moment_1 = __importDefault(require("moment"));
 const mysql = __importStar(require("mysql2"));
 const convertToSql = (value) => { return value instanceof Date && !isNaN(value) ? (0, moment_1.default)(value).format('YYYY-MM-DD HH:mm:ss') : `${value}`; };
@@ -84,4 +84,19 @@ const getTableLastUpdate = (conn, tableName) => __awaiter(void 0, void 0, void 0
     return Promise.resolve(result.length ? (0, moment_1.default)(result[0].UPDATE_TIME).format('YYYY-MM-DD HH:mm:ss') : undefined);
 });
 exports.getTableLastUpdate = getTableLastUpdate;
+const getTableAuditTimes = (conn, tableName) => __awaiter(void 0, void 0, void 0, function* () {
+    const [rows] = yield conn.query(`SELECT CREATE_TIME, UPDATE_TIME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${tableName}'`);
+    const result = Array.isArray(rows) ? rows : [rows];
+    if (result.length) {
+        const response = {
+            created: (0, moment_1.default)(result[0].CREATE_TIME).format('YYYY-MM-DD HH:mm:ss'),
+            updated: (0, moment_1.default)(result[0].UPDATE_TIME).format('YYYY-MM-DD HH:mm:ss'),
+        };
+        return response;
+    }
+    else {
+        return undefined;
+    }
+});
+exports.getTableAuditTimes = getTableAuditTimes;
 //# sourceMappingURL=mysql.js.map

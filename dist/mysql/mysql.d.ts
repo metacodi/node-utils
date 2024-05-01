@@ -7,4 +7,8 @@ export declare const interpolateQuery: (query: string, values?: {
 }) => string;
 export declare const syncRow: (conn: PoolConnection, table: string, row: any, primaryKey?: string) => Promise<any>;
 export declare const getTableLastUpdate: (conn: PoolConnection | Pool, tableName: string) => Promise<string>;
+export declare const getTableAuditTimes: (conn: PoolConnection | Pool, tableName: string) => Promise<{
+    created: string;
+    updated: string;
+}>;
 //# sourceMappingURL=mysql.d.ts.map
