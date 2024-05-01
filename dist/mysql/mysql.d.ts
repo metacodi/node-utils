@@ -1,11 +1,50 @@
 #!/usr/bin/env node
 import { Pool, PoolConnection } from 'mysql2/promise';
-export declare const convertToSql: (value: any) => string;
 export declare const quoteEntityName: (entityName: string) => string;
-export declare const interpolateQuery: (query: string, values?: {
-    [param: string]: any;
+export declare const convertToSql: (value: any, options?: {
+    scapeParamValues?: boolean;
 }) => string;
-export declare const syncRow: (conn: PoolConnection, table: string, row: any, primaryKey?: string) => Promise<any>;
+export declare const interpolateQuery: (query: string, params: {
+    [param: string]: any;
+}, options?: {
+    stringifyParamValues?: boolean;
+    scapeParamValues?: boolean;
+}) => string;
+export declare const generateCrudStatements: (table: string, row: any, options?: {
+    primaryKey?: string;
+    prefixFieldsWithTable?: boolean;
+    selectWithAsterik?: boolean;
+}) => {
+    parameterized: {
+        select: string;
+        insert: string;
+        update: string;
+        delete: string;
+    };
+    interpolated: {
+        select: string;
+        insert: string;
+        update: string;
+        delete: string;
+    };
+    fragments: {
+        table: string;
+        fields: string[];
+        columns: string[];
+        params: string[];
+        pairs: string[];
+        values: {
+            [param: string]: any;
+        };
+        primaryKey: string;
+        idreg: any;
+    };
+};
+export declare const syncRow: (conn: PoolConnection, table: string, row: any, options?: {
+    primaryKey?: string;
+    prefixFieldsWithTable?: boolean;
+    selectWithAsterik?: boolean;
+}) => Promise<any>;
 export declare const getTableLastUpdate: (conn: PoolConnection | Pool, tableName: string) => Promise<string>;
 export declare const getTableAuditTimes: (conn: PoolConnection | Pool, tableName: string) => Promise<{
     created: string;
