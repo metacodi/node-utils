@@ -8,6 +8,7 @@ class TaskExecutor {
         this.options = options;
         this.queue = [];
         this.executingTask = false;
+        this.currentTask = undefined;
         this.isSleeping = false;
         this.executionPaused = false;
         this.changeLimitsPending = false;
@@ -63,12 +64,14 @@ class TaskExecutor {
             else {
                 while (this.hasTasksToConsume && !this.isSleeping && !this.executionPaused) {
                     const task = this.consumeTask();
+                    this.currentTask = task;
                     if (!!this.period) {
                         this.countPeriod += 1;
                     }
                     this.executeTask(task);
                 }
                 this.executingTask = false;
+                this.currentTask = undefined;
             }
         }
     }
@@ -90,6 +93,7 @@ class TaskExecutor {
         }
         this.executeTask(task).finally(() => {
             this.executingTask = false;
+            this.currentTask = undefined;
             this.executeQueue();
         });
     }
@@ -115,6 +119,7 @@ class TaskExecutor {
         this.stopTasksInterval();
         this.countPeriod = 0;
         this.executingTask = false;
+        this.currentTask = undefined;
         setTimeout(() => {
             this.isSleeping = false;
             this.executeQueue();

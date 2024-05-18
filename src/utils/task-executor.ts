@@ -24,6 +24,9 @@ export abstract class TaskExecutor {
   queue: any[] = [];
   /** Indica quan hi ha una tasca en execució. */
   executingTask = false;
+  /** Referència a la tasca actualment en execució. */
+  currentTask: any = undefined;
+  /** Indica quan hi ha una tasca en execució. */
   isSleeping = false;
   /** Indica quan l'execució de la cua està en pausa. */
   executionPaused = false;
@@ -76,11 +79,13 @@ export abstract class TaskExecutor {
         while (this.hasTasksToConsume && !this.isSleeping && !this.executionPaused) {
           // Executem la següent tasca de la cua.
           const task = this.consumeTask();
+          this.currentTask = task;
           if (!!this.period) { this.countPeriod += 1; }
           this.executeTask(task);
         }
         // Restablim l'indicador d'estat per desblocar la cua.
         this.executingTask = false;
+        this.currentTask = undefined;
       }
     }
   }
@@ -119,6 +124,7 @@ export abstract class TaskExecutor {
     this.executeTask(task).finally(() => {
       // Restablim l'indicador d'estat per desblocar la cua.
       this.executingTask = false;
+      this.currentTask = undefined;
       // Mentre quedin tasques s'aniran consumint de la cua.
       this.executeQueue();
     });
@@ -153,6 +159,7 @@ export abstract class TaskExecutor {
     this.countPeriod = 0;
     // Restablim l'indicador d'estat per desblocar la cua.
     this.executingTask = false;
+    this.currentTask = undefined;
     // Esperem un temps prudencial abans de tornar a executar la cua.
     setTimeout(() => {
       this.isSleeping = false;

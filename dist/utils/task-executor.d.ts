@@ -16,6 +16,7 @@ export declare abstract class TaskExecutor {
     options?: TaskExecutorOptions;
     queue: any[];
     executingTask: boolean;
+    currentTask: any;
     isSleeping: boolean;
     executionPaused: boolean;
     changeLimitsPending: boolean;
