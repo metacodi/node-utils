@@ -1,4 +1,6 @@
 import moment from 'moment';
+
+import { deepClone } from './deep-merge';
 import { logTime } from '../functions/functions';
 
 
@@ -20,10 +22,13 @@ export interface TaskExecutorOptions {
 };
 
 export abstract class TaskExecutor {
-  /** Cua de tasques. */
-  queue: any[] = [];
+  /** Cua de tasques.
+   *
+   * NOTA: És una propietat privada per evitar referències externes que poden ocasionar problemes de consum i acabar generant duplicitat de tasques a la cua.
+   */
+  private queue: any[] = [];
   /** Indica quan hi ha una tasca en execució. */
-  executingTask = false;
+  isExecutingTask = false;
   /** Referència a la tasca actualment en execució. */
   currentTask: any = undefined;
   /** Indica quan hi ha una tasca en execució. */
@@ -33,7 +38,7 @@ export abstract class TaskExecutor {
   /** Indica quan hi ha una operació d'actualització de límits a l'espera. */
   changeLimitsPending = false;
   /** Quantitat de consultes realitzades durant el periode actual. */
-  countPeriod = 0;
+  executedTasksInPeriod = 0;
   /** @hidden */
   intervalSubscription: NodeJS.Timer = undefined;
 
@@ -62,13 +67,13 @@ export abstract class TaskExecutor {
     // Comprovem que no estigui en pausa.
     if (this.executionPaused) { return; }
     // Evitem els solapaments mentre s'executa una altra tasca.
-    if (this.executingTask) { return; }
+    if (this.isExecutingTask) { return; }
     // Mentre existeixin tasques pendents i no haguem superat el màxim limitat.
     if (this.hasTasksToConsume) {
       // Si l'interval s'havia aturat, l'iniciem de nou.
       if (!!this.maxQuantity && !this.isTaskIntervalOn) { this.startTasksInterval(); }
       // Establim l'indicador d'estat per blocar l'accés a la cua.
-      this.executingTask = true;
+      this.isExecutingTask = true;
 
       if (this.run === 'sync') {
         // sync: seqüencial
@@ -78,13 +83,13 @@ export abstract class TaskExecutor {
         // async: paral·lel
         while (this.hasTasksToConsume && !this.isSleeping && !this.executionPaused) {
           // Executem la següent tasca de la cua.
-          const task = this.consumeTask();  
+          const task = this.consumeTask();
           this.currentTask = task;
-          if (!!this.period) { this.countPeriod += 1; }
+          if (!!this.period) { this.executedTasksInPeriod += 1; }
           this.executeTask(task);
         }
         // Restablim l'indicador d'estat per desblocar la cua.
-        this.executingTask = false;
+        this.isExecutingTask = false;
         this.currentTask = undefined;
       }
     }
@@ -120,11 +125,11 @@ export abstract class TaskExecutor {
     const task = this.consumeTask();
     this.currentTask = task;
     // Incrementem el comptador.
-    if (!!this.period) { this.countPeriod += 1; }
+    if (!!this.period) { this.executedTasksInPeriod += 1; }
     // Esperem el callback per garantir un procés seqüencial.
     this.executeTask(task).finally(() => {
       // Restablim l'indicador d'estat per desblocar la cua.
-      this.executingTask = false;
+      this.isExecutingTask = false;
       this.currentTask = undefined;
       // Mentre quedin tasques s'aniran consumint de la cua.
       this.executeQueue();
@@ -139,7 +144,7 @@ export abstract class TaskExecutor {
     // logTime('----------- START interval', period);
     // if (this.intervalSubscription !== undefined) { this.intervalSubscription.unsubscribe(); }
     if (this.intervalSubscription !== undefined) { clearInterval(this.intervalSubscription); }
-    this.countPeriod = 0;
+    this.executedTasksInPeriod = 0;
     // this.intervalSubscription = interval(period * 1000).subscribe(() => this.processTasksInterval());
     this.intervalSubscription = setInterval(() => this.processTasksInterval(), period * 1000);
   }
@@ -157,9 +162,9 @@ export abstract class TaskExecutor {
     // Aturem l'interval.
     this.stopTasksInterval();
     // Restablim el comptador de tasques de l'interval.
-    this.countPeriod = 0;
+    this.executedTasksInPeriod = 0;
     // Restablim l'indicador d'estat per desblocar la cua.
-    this.executingTask = false;
+    this.isExecutingTask = false;
     this.currentTask = undefined;
     // Esperem un temps prudencial abans de tornar a executar la cua.
     setTimeout(() => {
@@ -173,9 +178,9 @@ export abstract class TaskExecutor {
     // Si hi ha una operació de canvi de límits pendent, ara és l'hora de fer el canvi.
     if (this.changeLimitsPending) { this.changeLimitsPending = false; this.stopTasksInterval(); return this.executeQueue(); }
     // Comprovem si s'ha executat alguna tasca.
-    if (this.countPeriod > 0) {
+    if (this.executedTasksInPeriod > 0) {
       // Inicialitzem el comptador.
-      this.countPeriod = 0;
+      this.executedTasksInPeriod = 0;
       // Endrecem les tasques per prioritat.
       if (this.hasPriority) { this.sortTasksByPriority(); }
       // S'ha esgotat el periode, tornem a llançar la cua.
@@ -192,6 +197,27 @@ export abstract class TaskExecutor {
   //  queue
   // ---------------------------------------------------------------------------------------------------
 
+  /** Retorna una còpia de les tasques de la cua. */
+  tasks(options?: { includeCurrentTask?: boolean, cloneTasks?: boolean;  }) {
+    if (!options) { options = {}; }
+    const includeCurrentTask = options.includeCurrentTask === undefined ? true : options.includeCurrentTask;
+    const cloneTasks = options.cloneTasks === undefined ? true : options.cloneTasks;
+    const { queue, isExecutingTask, currentTask} = this;
+    // NOTA: Obtenim els elements de la cua establint-los en un nou array.
+    // IMPORTANT: No s'ha de suministar mai una referència de la cua. Per obtenir els elements cal desestructurar l'array amb l'operador (...)
+    // Altrament, les tasques acaben duplicant-se enlloc de consumir-se de la cua.
+    const tasks = cloneTasks ? deepClone([...queue]) : [...queue];
+    // NOTA: Si hi ha una tasca en execució és pq ja s'ha consumit de la cua (ja no hi és a l'array).
+    if (includeCurrentTask && isExecutingTask && !!currentTask) {
+      // Apliquem la clonació.
+      const task = cloneTasks ? deepClone(currentTask) : currentTask;
+      // NOTA: Afegim la tasca actual a l'array en funció de com es va consumir.
+      if (this.consume === 'shift') { tasks.unshift(task) } else { tasks.push(task); }
+    }
+    // Retornem una còpia de la cua.
+    return tasks;
+  }
+
   /** Afegeix la tasca al principi o al final de la cua. */
   protected addTask(task: any) { if (this.add === 'unshift') { this.queue.unshift(task); } else { this.queue.push(task); } }
 
@@ -199,10 +225,10 @@ export abstract class TaskExecutor {
   protected consumeTask(): any { return this.consume === 'shift' ? this.queue.shift() : this.queue.pop(); }
 
   /** Incorpora una tasca fallida a la cua perquè es torni a executar. */
-  protected tryAgainTask(): any { return this.consume === 'shift' ? this.queue.unshift() : this.queue.push(); }
+  protected tryAgainTask(task: any): any { return this.consume === 'shift' ? this.queue.unshift(task) : this.queue.push(task); }
 
   /** Comprova si encara hi ha tasques a la cua i no s'ha superat el límit màxim. */
-  protected get hasTasksToConsume(): boolean { return !!this.queue.length && (!this.maxQuantity || (this.countPeriod < this.maxQuantity)); }
+  protected get hasTasksToConsume(): boolean { return !!this.queue.length && (!this.maxQuantity || (this.executedTasksInPeriod < this.maxQuantity)); }
 
   /** Endreça les tasques per ordre de prioritat. */
   protected sortTasksByPriority() { this.queue.sort((taskA: any, taskB: any) => (taskA?.priority || 1) - (taskB?.priority || 1)); }

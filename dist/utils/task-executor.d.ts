@@ -14,13 +14,13 @@ export interface TaskExecutorOptions {
 }
 export declare abstract class TaskExecutor {
     options?: TaskExecutorOptions;
-    queue: any[];
-    executingTask: boolean;
+    private queue;
+    isExecutingTask: boolean;
     currentTask: any;
     isSleeping: boolean;
     executionPaused: boolean;
     changeLimitsPending: boolean;
-    countPeriod: number;
+    executedTasksInPeriod: number;
     intervalSubscription: NodeJS.Timer;
     constructor(options?: TaskExecutorOptions);
     do(task: any): void;
@@ -34,9 +34,13 @@ export declare abstract class TaskExecutor {
     protected sleepTasksInterval(period?: number): void;
     protected processTasksInterval(): void;
     protected get isTaskIntervalOn(): boolean;
+    tasks(options?: {
+        includeCurrentTask?: boolean;
+        cloneTasks?: boolean;
+    }): any;
     protected addTask(task: any): void;
     protected consumeTask(): any;
-    protected tryAgainTask(): any;
+    protected tryAgainTask(task: any): any;
     protected get hasTasksToConsume(): boolean;
     protected sortTasksByPriority(): void;
     protected get hasPriority(): boolean;

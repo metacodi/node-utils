@@ -1,18 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaskExecutor = void 0;
+const deep_merge_1 = require("./deep-merge");
 const functions_1 = require("../functions/functions");
 ;
 class TaskExecutor {
     constructor(options) {
         this.options = options;
         this.queue = [];
-        this.executingTask = false;
+        this.isExecutingTask = false;
         this.currentTask = undefined;
         this.isSleeping = false;
         this.executionPaused = false;
         this.changeLimitsPending = false;
-        this.countPeriod = 0;
+        this.executedTasksInPeriod = 0;
         this.intervalSubscription = undefined;
         if (!options) {
             options = {};
@@ -45,14 +46,14 @@ class TaskExecutor {
         if (this.executionPaused) {
             return;
         }
-        if (this.executingTask) {
+        if (this.isExecutingTask) {
             return;
         }
         if (this.hasTasksToConsume) {
             if (!!this.maxQuantity && !this.isTaskIntervalOn) {
                 this.startTasksInterval();
             }
-            this.executingTask = true;
+            this.isExecutingTask = true;
             if (this.run === 'sync') {
                 if (this.delay) {
                     setTimeout(() => this.nextTask(), this.delay);
@@ -66,11 +67,11 @@ class TaskExecutor {
                     const task = this.consumeTask();
                     this.currentTask = task;
                     if (!!this.period) {
-                        this.countPeriod += 1;
+                        this.executedTasksInPeriod += 1;
                     }
                     this.executeTask(task);
                 }
-                this.executingTask = false;
+                this.isExecutingTask = false;
                 this.currentTask = undefined;
             }
         }
@@ -90,10 +91,10 @@ class TaskExecutor {
         const task = this.consumeTask();
         this.currentTask = task;
         if (!!this.period) {
-            this.countPeriod += 1;
+            this.executedTasksInPeriod += 1;
         }
         this.executeTask(task).finally(() => {
-            this.executingTask = false;
+            this.isExecutingTask = false;
             this.currentTask = undefined;
             this.executeQueue();
         });
@@ -103,7 +104,7 @@ class TaskExecutor {
         if (this.intervalSubscription !== undefined) {
             clearInterval(this.intervalSubscription);
         }
-        this.countPeriod = 0;
+        this.executedTasksInPeriod = 0;
         this.intervalSubscription = setInterval(() => this.processTasksInterval(), period * 1000);
     }
     stopTasksInterval() {
@@ -118,8 +119,8 @@ class TaskExecutor {
         }
         this.isSleeping = true;
         this.stopTasksInterval();
-        this.countPeriod = 0;
-        this.executingTask = false;
+        this.executedTasksInPeriod = 0;
+        this.isExecutingTask = false;
         this.currentTask = undefined;
         setTimeout(() => {
             this.isSleeping = false;
@@ -132,8 +133,8 @@ class TaskExecutor {
             this.stopTasksInterval();
             return this.executeQueue();
         }
-        if (this.countPeriod > 0) {
-            this.countPeriod = 0;
+        if (this.executedTasksInPeriod > 0) {
+            this.executedTasksInPeriod = 0;
             if (this.hasPriority) {
                 this.sortTasksByPriority();
             }
@@ -145,6 +146,25 @@ class TaskExecutor {
         ;
     }
     get isTaskIntervalOn() { return this.intervalSubscription !== undefined; }
+    tasks(options) {
+        if (!options) {
+            options = {};
+        }
+        const includeCurrentTask = options.includeCurrentTask === undefined ? true : options.includeCurrentTask;
+        const cloneTasks = options.cloneTasks === undefined ? true : options.cloneTasks;
+        const { queue, isExecutingTask, currentTask } = this;
+        const tasks = cloneTasks ? (0, deep_merge_1.deepClone)([...queue]) : [...queue];
+        if (includeCurrentTask && isExecutingTask && !!currentTask) {
+            const task = cloneTasks ? (0, deep_merge_1.deepClone)(currentTask) : currentTask;
+            if (this.consume === 'shift') {
+                tasks.unshift(task);
+            }
+            else {
+                tasks.push(task);
+            }
+        }
+        return tasks;
+    }
     addTask(task) { if (this.add === 'unshift') {
         this.queue.unshift(task);
     }
@@ -152,8 +172,8 @@ class TaskExecutor {
         this.queue.push(task);
     } }
     consumeTask() { return this.consume === 'shift' ? this.queue.shift() : this.queue.pop(); }
-    tryAgainTask() { return this.consume === 'shift' ? this.queue.unshift() : this.queue.push(); }
-    get hasTasksToConsume() { return !!this.queue.length && (!this.maxQuantity || (this.countPeriod < this.maxQuantity)); }
+    tryAgainTask(task) { return this.consume === 'shift' ? this.queue.unshift(task) : this.queue.push(task); }
+    get hasTasksToConsume() { return !!this.queue.length && (!this.maxQuantity || (this.executedTasksInPeriod < this.maxQuantity)); }
     sortTasksByPriority() { this.queue.sort((taskA, taskB) => ((taskA === null || taskA === void 0 ? void 0 : taskA.priority) || 1) - ((taskB === null || taskB === void 0 ? void 0 : taskB.priority) || 1)); }
     get hasPriority() { return !!this.queue.length && typeof this.queue[0] === 'object' && this.queue[0].hasOwnProperty('priority'); }
     get run() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.run) || 'sync'; }
