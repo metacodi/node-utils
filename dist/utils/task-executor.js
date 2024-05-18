@@ -88,6 +88,7 @@ class TaskExecutor {
             return;
         }
         const task = this.consumeTask();
+        this.currentTask = task;
         if (!!this.period) {
             this.countPeriod += 1;
         }

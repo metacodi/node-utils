@@ -78,7 +78,7 @@ export abstract class TaskExecutor {
         // async: paral·lel
         while (this.hasTasksToConsume && !this.isSleeping && !this.executionPaused) {
           // Executem la següent tasca de la cua.
-          const task = this.consumeTask();
+          const task = this.consumeTask();  
           this.currentTask = task;
           if (!!this.period) { this.countPeriod += 1; }
           this.executeTask(task);
@@ -118,6 +118,7 @@ export abstract class TaskExecutor {
     if (this.executionPaused) { return; }
     // Executem la següent tasca de la cua pel principi o pel final.
     const task = this.consumeTask();
+    this.currentTask = task;
     // Incrementem el comptador.
     if (!!this.period) { this.countPeriod += 1; }
     // Esperem el callback per garantir un procés seqüencial.
