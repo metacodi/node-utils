@@ -206,7 +206,7 @@ export abstract class TaskExecutor {
     // NOTA: Obtenim els elements de la cua establint-los en un nou array.
     // IMPORTANT: No s'ha de suministar mai una referència de la cua. Per obtenir els elements cal desestructurar l'array amb l'operador (...)
     // Altrament, les tasques acaben duplicant-se enlloc de consumir-se de la cua.
-    const tasks = cloneTasks ? deepClone([...queue]) : [...queue];
+    const tasks: any[] = cloneTasks ? deepClone([...queue]) : [...queue];
     // NOTA: Si hi ha una tasca en execució és pq ja s'ha consumit de la cua (ja no hi és a l'array).
     if (includeCurrentTask && isExecutingTask && !!currentTask) {
       // Apliquem la clonació.

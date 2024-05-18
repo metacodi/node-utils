@@ -37,7 +37,7 @@ export declare abstract class TaskExecutor {
     getTasks(options?: {
         includeCurrentTask?: boolean;
         cloneTasks?: boolean;
-    }): any;
+    }): any[];
     protected addTask(task: any): void;
     protected consumeTask(): any;
     protected tryAgainTask(task: any): any;
