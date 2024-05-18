@@ -200,8 +200,8 @@ export abstract class TaskExecutor {
   /** Retorna una còpia de les tasques de la cua. */
   getTasks(options?: { includeCurrentTask?: boolean, cloneTasks?: boolean;  }) {
     if (!options) { options = {}; }
-    const includeCurrentTask = options.includeCurrentTask === undefined ? true : options.includeCurrentTask;
-    const cloneTasks = options.cloneTasks === undefined ? true : options.cloneTasks;
+    const includeCurrentTask = options.includeCurrentTask === undefined ? false : options.includeCurrentTask;
+    const cloneTasks = options.cloneTasks === undefined ? false : options.cloneTasks;
     const { queue, isExecutingTask, currentTask} = this;
     // NOTA: Obtenim els elements de la cua establint-los en un nou array.
     // IMPORTANT: No s'ha de suministar mai una referència de la cua. Per obtenir els elements cal desestructurar l'array amb l'operador (...)

@@ -150,8 +150,8 @@ class TaskExecutor {
         if (!options) {
             options = {};
         }
-        const includeCurrentTask = options.includeCurrentTask === undefined ? true : options.includeCurrentTask;
-        const cloneTasks = options.cloneTasks === undefined ? true : options.cloneTasks;
+        const includeCurrentTask = options.includeCurrentTask === undefined ? false : options.includeCurrentTask;
+        const cloneTasks = options.cloneTasks === undefined ? false : options.cloneTasks;
         const { queue, isExecutingTask, currentTask } = this;
         const tasks = cloneTasks ? (0, deep_merge_1.deepClone)([...queue]) : [...queue];
         if (includeCurrentTask && isExecutingTask && !!currentTask) {
