@@ -146,7 +146,7 @@ class TaskExecutor {
         ;
     }
     get isTaskIntervalOn() { return this.intervalSubscription !== undefined; }
-    tasks(options) {
+    getTasks(options) {
         if (!options) {
             options = {};
         }

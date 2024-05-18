@@ -34,7 +34,7 @@ export declare abstract class TaskExecutor {
     protected sleepTasksInterval(period?: number): void;
     protected processTasksInterval(): void;
     protected get isTaskIntervalOn(): boolean;
-    tasks(options?: {
+    getTasks(options?: {
         includeCurrentTask?: boolean;
         cloneTasks?: boolean;
     }): any;

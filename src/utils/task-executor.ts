@@ -198,7 +198,7 @@ export abstract class TaskExecutor {
   // ---------------------------------------------------------------------------------------------------
 
   /** Retorna una còpia de les tasques de la cua. */
-  tasks(options?: { includeCurrentTask?: boolean, cloneTasks?: boolean;  }) {
+  getTasks(options?: { includeCurrentTask?: boolean, cloneTasks?: boolean;  }) {
     if (!options) { options = {}; }
     const includeCurrentTask = options.includeCurrentTask === undefined ? true : options.includeCurrentTask;
     const cloneTasks = options.cloneTasks === undefined ? true : options.cloneTasks;
