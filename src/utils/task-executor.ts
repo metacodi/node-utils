@@ -71,7 +71,7 @@ export abstract class TaskExecutor {
     this.options = options;
   }
 
-  /** @deprecated Utilitzar `doTasks()` com a alternativa. */
+  /** @deprecated Utilitzar `doTask()` com a alternativa. */
   do(task: any) {
     // Afegim la tasca a la cua.
     this.addTask(task);
