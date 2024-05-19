@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaskExecutor = void 0;
 const deep_merge_1 = require("./deep-merge");
 const functions_1 = require("../functions/functions");
+const terminal_1 = require("../terminal/terminal");
 ;
 class TaskExecutor {
     constructor(options) {
@@ -11,10 +12,10 @@ class TaskExecutor {
         this.isExecutingTask = false;
         this.currentTask = undefined;
         this.isSleeping = false;
-        this.executionPaused = false;
+        this.isExecutionPaused = false;
         this.changeLimitsPending = false;
         this.executedTasksInPeriod = 0;
-        this.intervalSubscription = undefined;
+        this.maxTasksCheckingSubscription = undefined;
         if (!options) {
             options = {};
         }
@@ -30,28 +31,41 @@ class TaskExecutor {
         if (options.delay === undefined) {
             options.delay = 0;
         }
-        if (options.maxQuantity === undefined) {
-            options.maxQuantity = 0;
+        if (options.maxTasksInPeriod === undefined) {
+            options.maxTasksInPeriod = 0;
         }
-        if (options.period === undefined) {
-            options.period = 0;
+        if (options.maxTasksCheckingPeriod === undefined) {
+            options.maxTasksCheckingPeriod = 0;
         }
         this.options = options;
     }
     do(task) {
         this.addTask(task);
+        if (this.hasPriority) {
+            this.sortTasksByPriority();
+        }
+        this.executeQueue();
+    }
+    doTasks(tasks) {
+        if (!Array.isArray(tasks)) {
+            tasks = !tasks ? [] : [tasks];
+        }
+        (tasks || []).forEach(task => this.addTask(task));
+        if (this.hasPriority) {
+            this.sortTasksByPriority();
+        }
         this.executeQueue();
     }
     executeQueue() {
-        if (this.executionPaused) {
+        if (this.isExecutionPaused) {
             return;
         }
         if (this.isExecutingTask) {
             return;
         }
         if (this.hasTasksToConsume) {
-            if (!!this.maxQuantity && !this.isTaskIntervalOn) {
-                this.startTasksInterval();
+            if (this.maxTasksInPeriod > 0 && !this.isMaxTaskCheckingStarted) {
+                this.startMaxTasksCheckingInterval();
             }
             this.isExecutingTask = true;
             if (this.run === 'sync') {
@@ -63,10 +77,10 @@ class TaskExecutor {
                 }
             }
             else {
-                while (this.hasTasksToConsume && !this.isSleeping && !this.executionPaused) {
+                while (this.hasTasksToConsume && !this.isSleeping && !this.isExecutionPaused) {
                     const task = this.consumeTask();
                     this.currentTask = task;
-                    if (!!this.period) {
+                    if (this.maxTasksInPeriod > 0) {
                         this.executedTasksInPeriod += 1;
                     }
                     this.executeTask(task);
@@ -77,20 +91,20 @@ class TaskExecutor {
         }
     }
     pauseQueue() {
-        this.executionPaused = true;
-        this.stopTasksInterval();
+        this.isExecutionPaused = true;
+        this.stopMaxTasksCheckingInterval();
     }
     resumeQueue() {
-        this.executionPaused = false;
+        this.isExecutionPaused = false;
         this.executeQueue();
     }
     nextTask() {
-        if (this.executionPaused) {
+        if (this.isExecutionPaused) {
             return;
         }
         const task = this.consumeTask();
         this.currentTask = task;
-        if (!!this.period) {
+        if (this.maxTasksInPeriod > 0) {
             this.executedTasksInPeriod += 1;
         }
         this.executeTask(task).finally(() => {
@@ -99,26 +113,28 @@ class TaskExecutor {
             this.executeQueue();
         });
     }
-    startTasksInterval() {
-        const { period } = this;
-        if (this.intervalSubscription !== undefined) {
-            clearInterval(this.intervalSubscription);
+    startMaxTasksCheckingInterval() {
+        const { maxTasksCheckingPeriod } = this;
+        if (this.maxTasksInPeriod > 0) {
+            if (this.maxTasksCheckingSubscription !== undefined) {
+                clearInterval(this.maxTasksCheckingSubscription);
+            }
+            this.executedTasksInPeriod = 0;
+            this.maxTasksCheckingSubscription = setInterval(() => this.processMaxTasksCheckingInterval(), maxTasksCheckingPeriod * 1000);
         }
-        this.executedTasksInPeriod = 0;
-        this.intervalSubscription = setInterval(() => this.processTasksInterval(), period * 1000);
     }
-    stopTasksInterval() {
-        if (this.intervalSubscription !== undefined) {
-            clearInterval(this.intervalSubscription);
+    stopMaxTasksCheckingInterval() {
+        if (this.maxTasksCheckingSubscription !== undefined) {
+            clearInterval(this.maxTasksCheckingSubscription);
         }
-        this.intervalSubscription = undefined;
+        this.maxTasksCheckingSubscription = undefined;
     }
-    sleepTasksInterval(period) {
+    sleepMaxTasksCheckingInterval(period) {
         if (!period) {
             period = 10;
         }
         this.isSleeping = true;
-        this.stopTasksInterval();
+        this.stopMaxTasksCheckingInterval();
         this.executedTasksInPeriod = 0;
         this.isExecutingTask = false;
         this.currentTask = undefined;
@@ -127,25 +143,19 @@ class TaskExecutor {
             this.executeQueue();
         }, period * 1000);
     }
-    processTasksInterval() {
+    processMaxTasksCheckingInterval() {
         if (this.changeLimitsPending) {
             this.changeLimitsPending = false;
-            this.stopTasksInterval();
+            this.stopMaxTasksCheckingInterval();
             return this.executeQueue();
         }
-        if (this.executedTasksInPeriod > 0) {
-            this.executedTasksInPeriod = 0;
-            if (this.hasPriority) {
-                this.sortTasksByPriority();
-            }
-            this.executeQueue();
+        if (this.executedTasksInPeriod === 0) {
+            return this.stopMaxTasksCheckingInterval();
         }
-        else {
-            return this.stopTasksInterval();
-        }
-        ;
+        this.executedTasksInPeriod = 0;
+        this.executeQueue();
     }
-    get isTaskIntervalOn() { return this.intervalSubscription !== undefined; }
+    get isMaxTaskCheckingStarted() { return this.maxTasksCheckingSubscription !== undefined; }
     getTasks(options) {
         if (!options) {
             options = {};
@@ -172,63 +182,72 @@ class TaskExecutor {
         this.queue.push(task);
     } }
     consumeTask() { return this.consume === 'shift' ? this.queue.shift() : this.queue.pop(); }
-    tryAgainTask(task) { return this.consume === 'shift' ? this.queue.unshift(task) : this.queue.push(task); }
-    get hasTasksToConsume() { return !!this.queue.length && (!this.maxQuantity || (this.executedTasksInPeriod < this.maxQuantity)); }
+    restoreTask(task) { return this.consume === 'shift' ? this.queue.unshift(task) : this.queue.push(task); }
+    get hasTasksToConsume() { return !!this.queue.length && (!this.maxTasksInPeriod || (this.executedTasksInPeriod < this.maxTasksInPeriod)); }
     sortTasksByPriority() { this.queue.sort((taskA, taskB) => ((taskA === null || taskA === void 0 ? void 0 : taskA.priority) || 1) - ((taskB === null || taskB === void 0 ? void 0 : taskB.priority) || 1)); }
     get hasPriority() { return !!this.queue.length && typeof this.queue[0] === 'object' && this.queue[0].hasOwnProperty('priority'); }
     get run() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.run) || 'sync'; }
     get add() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.add) || 'push'; }
     get consume() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.consume) || 'shift'; }
     get delay() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.delay) || 0; }
-    get period() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.period) || 0; }
-    get maxQuantity() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.maxQuantity) || 0; }
+    get maxTasksCheckingPeriod() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.maxTasksCheckingPeriod) || 0; }
+    get maxTasksInPeriod() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.maxTasksInPeriod) || 0; }
 }
 exports.TaskExecutor = TaskExecutor;
 class TestTaskExecutor extends TaskExecutor {
+    constructor(options) {
+        super(options);
+        this.options = options;
+        terminal_1.Terminal.title(`run: ${terminal_1.Terminal.green(this.run)}, add: ${terminal_1.Terminal.green(this.add)}, consume: ${terminal_1.Terminal.green(this.consume)}, delay: ${terminal_1.Terminal.green(this.delay)}`);
+    }
     stringify(task) { return typeof task === 'object' ? JSON.stringify(task) : task; }
-    do(task) {
-        (0, functions_1.logTime)(`do task ${this.stringify(task)}`);
-        super.do(task);
+    doTasks(tasks) {
+        tasks.forEach(task => (0, functions_1.logTime)(`do task ${this.stringify(task)}`));
+        super.doTasks(tasks);
     }
     executeTask(task) {
         return new Promise((resolve, reject) => {
             (0, functions_1.logTime)(`exec task ${this.stringify(task)}`);
-            setTimeout(() => {
-                resolve();
-            }, 100);
+            setTimeout(() => resolve(), 100);
         });
     }
 }
 const test = (options) => {
     const exec = new TestTaskExecutor(options);
+    const tasks = [];
     for (let i = 1; i <= 5; i++) {
-        exec.do(`${i}`);
+        tasks.push(`${i}`);
     }
+    exec.doTasks(tasks);
 };
 const testAsync = (options) => {
     const exec = new TestTaskExecutor(options);
+    const tasks = [];
     for (let i = 1; i < 9; i++) {
-        exec.do(`${i}`);
+        tasks.push(`${i}`);
     }
+    exec.doTasks(tasks);
     setTimeout(() => {
-        exec.do('A');
-        exec.do('B');
-    }, 9000);
+        exec.doTasks(['A', 'B']);
+    }, 3000);
 };
 const testPriority = (options) => {
     const exec = new TestTaskExecutor(options);
-    const rmin = 1;
-    const rmax = 5;
+    const tasks = [];
     for (let i = 1; i <= 60; i++) {
-        const priority = Math.floor(Math.random() * (rmax - rmin + 1) + rmin);
-        exec.do({ i, priority });
+        const range = { min: 1, max: 5 };
+        const priority = Math.floor(Math.random() * (range.max - range.min + 1) + range.min);
+        tasks.push({ i, priority });
     }
+    exec.doTasks(tasks);
     setTimeout(() => {
-        exec.do({ i: 'A', priority: 2 });
-        exec.do({ i: 'B', priority: 1 });
-        exec.do({ i: 'C', priority: 3 });
-        exec.do({ i: 'D', priority: 4 });
-        exec.do({ i: 'E', priority: 5 });
+        exec.doTasks([
+            { i: 'A', priority: 2 },
+            { i: 'B', priority: 1 },
+            { i: 'C', priority: 3 },
+            { i: 'D', priority: 4 },
+            { i: 'E', priority: 5 },
+        ]);
     }, 5000);
 };
 //# sourceMappingURL=task-executor.js.map

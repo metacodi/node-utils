@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import moment from 'moment';
 export interface Interval {
     period: number;
@@ -9,8 +8,8 @@ export interface TaskExecutorOptions {
     consume?: 'shift' | 'pop';
     run?: 'sync' | 'async';
     delay?: number;
-    maxQuantity?: number;
-    period?: number;
+    maxTasksInPeriod?: number;
+    maxTasksCheckingPeriod?: number;
 }
 export declare abstract class TaskExecutor {
     options?: TaskExecutorOptions;
@@ -18,29 +17,30 @@ export declare abstract class TaskExecutor {
     isExecutingTask: boolean;
     currentTask: any;
     isSleeping: boolean;
-    executionPaused: boolean;
+    isExecutionPaused: boolean;
     changeLimitsPending: boolean;
     executedTasksInPeriod: number;
-    intervalSubscription: NodeJS.Timer;
+    private maxTasksCheckingSubscription;
     constructor(options?: TaskExecutorOptions);
     do(task: any): void;
+    doTasks(tasks: any | any[]): void;
     protected executeQueue(): void;
     protected abstract executeTask(task: any): Promise<any>;
     pauseQueue(): void;
     resumeQueue(): void;
     protected nextTask(): void;
-    protected startTasksInterval(): void;
-    protected stopTasksInterval(): void;
-    protected sleepTasksInterval(period?: number): void;
-    protected processTasksInterval(): void;
-    protected get isTaskIntervalOn(): boolean;
+    protected startMaxTasksCheckingInterval(): void;
+    protected stopMaxTasksCheckingInterval(): void;
+    protected sleepMaxTasksCheckingInterval(period?: number): void;
+    protected processMaxTasksCheckingInterval(): void;
+    protected get isMaxTaskCheckingStarted(): boolean;
     getTasks(options?: {
         includeCurrentTask?: boolean;
         cloneTasks?: boolean;
     }): any[];
     protected addTask(task: any): void;
     protected consumeTask(): any;
-    protected tryAgainTask(task: any): any;
+    protected restoreTask(task: any): any;
     protected get hasTasksToConsume(): boolean;
     protected sortTasksByPriority(): void;
     protected get hasPriority(): boolean;
@@ -48,7 +48,7 @@ export declare abstract class TaskExecutor {
     get add(): 'unshift' | 'push';
     get consume(): 'shift' | 'pop';
     get delay(): number;
-    get period(): number;
-    get maxQuantity(): number;
+    get maxTasksCheckingPeriod(): number;
+    get maxTasksInPeriod(): number;
 }
 //# sourceMappingURL=task-executor.d.ts.map
