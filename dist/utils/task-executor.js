@@ -46,6 +46,13 @@ class TaskExecutor {
         }
         this.executeQueue();
     }
+    doTask(task) {
+        this.addTask(task);
+        if (this.hasPriority) {
+            this.sortTasksByPriority();
+        }
+        this.executeQueue();
+    }
     doTasks(tasks) {
         if (!Array.isArray(tasks)) {
             tasks = !tasks ? [] : [tasks];

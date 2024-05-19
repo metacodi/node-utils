@@ -23,7 +23,8 @@ export declare abstract class TaskExecutor {
     private maxTasksCheckingSubscription;
     constructor(options?: TaskExecutorOptions);
     do(task: any): void;
-    doTasks(tasks: any | any[]): void;
+    doTask(task: any): void;
+    doTasks(tasks: any[]): void;
     protected executeQueue(): void;
     protected abstract executeTask(task: any): Promise<any>;
     pauseQueue(): void;

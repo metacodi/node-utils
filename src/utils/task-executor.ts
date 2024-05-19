@@ -81,7 +81,16 @@ export abstract class TaskExecutor {
     this.executeQueue();
   }
 
-  doTasks(tasks: any | any[]) {
+  doTask(task: any) {
+    // Afegim la tasca a la cua.
+    this.addTask(task);
+    // Endrecem les tasques per prioritat.
+    if (this.hasPriority) { this.sortTasksByPriority(); }
+    // Provem d'executar la tasca.
+    this.executeQueue();
+  }
+
+  doTasks(tasks: any[]) {
     if (!Array.isArray(tasks)) { tasks = !tasks ? [] : [tasks]; }
     // Afegim les tasques a la cua.
     ((tasks || []) as any[]).forEach(task => this.addTask(task));
