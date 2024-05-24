@@ -36,16 +36,19 @@ export interface TaskExecutorOptions {
   maxTasksCheckingPeriod?: number;
 };
 
-export abstract class TaskExecutor {
+export abstract class TaskExecutor<T> {
   /** Cua de tasques.
    *
-   * NOTA: És una propietat privada per evitar referències externes que poden ocasionar problemes de consum i acabar generant duplicitat de tasques a la cua.
+   * ISSUE: Aquesta propietat és `private` per solucionar un problema ocasionat durant el consum de tasques
+   * que acabava generant duplicitat de tasques a la cua quan s'establia una referència externa a l'array.
+   *
+   * Per accedir a les tasques de la cua es pot utilitzar la funció `getTasks()`.
    */
-  private queue: any[] = [];
+  private queue: T[] = [];
   /** Indica quan hi ha una tasca en execució. */
   isExecutingTask = false;
   /** Referència a la tasca actualment en execució. */
-  currentTask: any = undefined;
+  currentTask: T = undefined;
   /** Indica si l'execució asíncrona de la cua està suspesa per un període determinat. */
   isSleeping = false;
   /** Indica quan l'execució de la cua està en pausa per una crida a `pauseQueue()`. */
@@ -72,7 +75,7 @@ export abstract class TaskExecutor {
   }
 
   /** @deprecated Utilitzar `doTask()` com a alternativa. */
-  do(task: any) {
+  do(task: T) {
     // Afegim la tasca a la cua.
     this.addTask(task);
     // Endrecem les tasques per prioritat.
@@ -81,7 +84,7 @@ export abstract class TaskExecutor {
     this.executeQueue();
   }
 
-  doTask(task: any) {
+  doTask(task: T) {
     // Afegim la tasca a la cua.
     this.addTask(task);
     // Endrecem les tasques per prioritat.
@@ -90,10 +93,10 @@ export abstract class TaskExecutor {
     this.executeQueue();
   }
 
-  doTasks(tasks: any[]) {
+  doTasks(tasks: T[]) {
     if (!Array.isArray(tasks)) { tasks = !tasks ? [] : [tasks]; }
     // Afegim les tasques a la cua.
-    ((tasks || []) as any[]).forEach(task => this.addTask(task));
+    ((tasks || []) as T[]).forEach(task => this.addTask(task));
     // Endrecem les tasques per prioritat.
     if (this.hasPriority) { this.sortTasksByPriority(); }
     // Provem d'executar la tasca.
@@ -121,7 +124,6 @@ export abstract class TaskExecutor {
         while (this.hasTasksToConsume && !this.isSleeping && !this.isExecutionPaused) {
           // Executem la següent tasca de la cua.
           const task = this.consumeTask();
-          this.currentTask = task;
           if (this.maxTasksInPeriod > 0) { this.executedTasksInPeriod += 1; }
           this.executeTask(task);
         }
@@ -133,7 +135,8 @@ export abstract class TaskExecutor {
   }
 
   /** Procediment que s'ha d'implementar a la classe heredada. */
-  protected abstract executeTask(task: any): Promise<any>;
+  protected abstract executeTask(task: T): Promise<T>;
+
 
   //  pause . resume
   // ---------------------------------------------------------------------------------------------------
@@ -237,9 +240,9 @@ export abstract class TaskExecutor {
     const cloneTasks = options.cloneTasks === undefined ? false : options.cloneTasks;
     const { queue, isExecutingTask, currentTask} = this;
     // NOTA: Obtenim els elements de la cua establint-los en un nou array.
-    // IMPORTANT: No s'ha de suministar mai una referència de la cua. Per obtenir els elements cal desestructurar l'array amb l'operador (...)
+    // ISSUE: No s'ha de suministar mai una referència de la cua. Per obtenir els elements cal desestructurar l'array amb l'operador (...)
     // Altrament, les tasques acaben duplicant-se enlloc de consumir-se de la cua.
-    const tasks: any[] = cloneTasks ? deepClone([...queue]) : [...queue];
+    const tasks: T[] = cloneTasks ? deepClone([...queue]) : [...queue];
     // NOTA: Si hi ha una tasca en execució és pq ja s'ha consumit de la cua (ja no hi és a l'array).
     if (includeCurrentTask && isExecutingTask && !!currentTask) {
       // Apliquem la clonació.
@@ -251,20 +254,20 @@ export abstract class TaskExecutor {
     return tasks;
   }
 
-  /** Afegeix la tasca al principi o al final de la cua. */
-  protected addTask(task: any) { if (this.add === 'unshift') { this.queue.unshift(task); } else { this.queue.push(task); } }
+  /** Afegeix la tasca al principi o al final de la cua. Returns the new length of the array. */
+  protected addTask(task: T) { if (this.add === 'unshift') { this.queue.unshift(task); } else { this.queue.push(task); } }
 
   /** Executa la següent tasca de la cua pel principi o pel final. */
-  protected consumeTask(): any { return this.consume === 'shift' ? this.queue.shift() : this.queue.pop(); }
+  protected consumeTask(): T { return this.consume === 'shift' ? this.queue.shift() : this.queue.pop(); }
 
-  /** Incorpora una tasca a la cua perquè sigui la següent en executar-se. Ex: per tornar a executar una tasca fallida. */
-  protected restoreTask(task: any): any { return this.consume === 'shift' ? this.queue.unshift(task) : this.queue.push(task); }
+  /** Incorpora una tasca a la cua perquè sigui la següent en executar-se. Returns the new length of the array. Ex: per tornar a executar una tasca fallida. */
+  protected restoreTask(task: T): number { return this.consume === 'shift' ? this.queue.unshift(task) : this.queue.push(task); }
 
   /** Comprova si encara hi ha tasques a la cua i no s'ha superat el límit màxim. */
   protected get hasTasksToConsume(): boolean { return !!this.queue.length && (!this.maxTasksInPeriod || (this.executedTasksInPeriod < this.maxTasksInPeriod)); }
 
   /** Endreça les tasques per ordre de prioritat. */
-  protected sortTasksByPriority() { this.queue.sort((taskA: any, taskB: any) => (taskA?.priority || 1) - (taskB?.priority || 1)); }
+  protected sortTasksByPriority() { if (this.hasPriority) { this.queue.sort((taskA: any, taskB: any) => (taskA?.priority || 1) - (taskB?.priority || 1)); } }
 
   /** Indica si els elements tenen una propietat de prioritat. */
   protected get hasPriority(): boolean { return !!this.queue.length && typeof this.queue[0] === 'object' && this.queue[0].hasOwnProperty('priority'); }
@@ -293,15 +296,15 @@ export abstract class TaskExecutor {
 //  npx ts-node src/utils/task-executor.ts
 // ---------------------------------------------------------------------------------------------------
 
-class TestTaskExecutor extends TaskExecutor {
+class TestExecutor<T> extends TaskExecutor<T> {
   constructor(
     public options?: TaskExecutorOptions,
   ) {
     super(options);
     Terminal.title(`run: ${Terminal.green(this.run)}, add: ${Terminal.green(this.add)}, consume: ${Terminal.green(this.consume)}, delay: ${Terminal.green(this.delay)}`);
   }
-  stringify(task: any) { return typeof task === 'object' ? JSON.stringify(task) : task; }
-  doTasks(tasks: any[]): void {
+  stringify(task: T) { return typeof task === 'object' ? JSON.stringify(task) : task; }
+  doTasks(tasks: T[]): void {
     tasks.forEach(task => logTime(`do task ${this.stringify(task)}`));
     super.doTasks(tasks);
   }
@@ -314,18 +317,18 @@ class TestTaskExecutor extends TaskExecutor {
   }
 }
 
-const test = (options?: TaskExecutor['options']) => {
-  const exec = new TestTaskExecutor(options);
+const test = (options?: TestExecutor<string>['options']) => {
+  const exec = new TestExecutor<string>(options);
 
-  const tasks = [];
+  const tasks: string[] = [];
   for (let i = 1; i <= 5; i++) { tasks.push(`${i}`); }
   exec.doTasks(tasks);
 };
 
-const testAsync = (options?: TaskExecutor['options']) => {
-  const exec = new TestTaskExecutor(options);
+const testAsync = (options?: TestExecutor<string>['options']) => {
+  const exec = new TestExecutor<string>(options);
 
-  const tasks = [];
+  const tasks: string[] = [];
   for (let i = 1; i < 9; i++) { tasks.push(`${i}`); }
   exec.doTasks(tasks);
 
@@ -334,14 +337,16 @@ const testAsync = (options?: TaskExecutor['options']) => {
   }, 3000);
 };
 
-const testPriority = (options?: TaskExecutor['options']) => {
-  const exec = new TestTaskExecutor(options);
+interface PriorityTask { i: string; priority?: number };
 
-  const tasks = []; 
+const testPriority = (options?: TestExecutor<PriorityTask>['options']) => {
+  const exec = new TestExecutor<PriorityTask>(options);
+
+  const tasks: PriorityTask[] = []; 
   for (let i = 1; i <= 60; i++) {
     const range = { min: 1, max: 5 };
     const priority = Math.floor(Math.random() * (range.max - range.min + 1) + range.min);
-    tasks.push({ i, priority });
+    tasks.push({ i: `${i}`, priority });
   }
   exec.doTasks(tasks);
 

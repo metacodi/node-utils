@@ -8,7 +8,7 @@ import { TaskExecutor, TaskExecutorOptions } from './task-executor';
 
 export type FilePeriodStamp = 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely';
 
-export interface Logger extends TaskExecutor { log(text: string): void }
+export interface Logger<T> extends TaskExecutor<T> { log(text: string): void }
 
 export interface FileLoggerOptions extends TaskExecutorOptions {
   folder?: string;
@@ -17,7 +17,7 @@ export interface FileLoggerOptions extends TaskExecutorOptions {
   formatStamp?: string;
   /** Adds a moment formatted stamp to the file name. */
   periodStamp?: FilePeriodStamp;
-  /** Indicates the file extension. In order to avoid extension, set value to empty string (''). */
+  /** Indicates the file extension. In order to avoid extension, set value to empty string (''). Default `log` */
   extension?: string;
 };
 
@@ -59,7 +59,7 @@ export interface FileLoggerOptions extends TaskExecutorOptions {
  * };
  * ```
  */
-export class FileLogger extends TaskExecutor implements Logger {
+export class FileLogger extends TaskExecutor<string> implements Logger<string> {
   constructor(
     public options?: FileLoggerOptions,
   ) {
@@ -110,11 +110,11 @@ export class FileLogger extends TaskExecutor implements Logger {
 
   log(text: string): void {
     // console.log(`doing task ${text}`, moment().format('YYYY-MM-DD H:mm:ss.SSS'));
-    super.do(text + '\n');
+    super.doTask(text + '\n');
   }
 
-  protected executeTask(content: string): Promise<void> {
-    return new Promise<void>((resolve: any, reject: any) => {
+  protected executeTask(content: string): Promise<string> {
+    return new Promise<string>((resolve: any, reject: any) => {
       const { folder, fullname } = this;
       // Ens assegurem que existeix la carpeta.
       if (folder !== '.' && !fs.existsSync(folder)) { fs.mkdirSync(folder, { recursive: true }); }
@@ -165,7 +165,8 @@ const test = (folder: string) => {
   console.log('daily => ', (new FileLogger({ folder, periodStamp: 'daily' })).fullname);
   console.log('hourly => ', (new FileLogger({ folder, periodStamp: 'hourly' })).fullname);
   console.log('minutely => ', (new FileLogger({ folder, periodStamp: 'minutely' })).fullname);
-  console.log('format => ', (new FileLogger({ folder, formatStamp: 'MMM DD YYYY' })).fullname);
+  console.log(`format ('${'MMM DD YYYY'}') => `, (new FileLogger({ folder, formatStamp: 'MMM DD YYYY' })).fullname);
+  console.log(`format ('${'YY-MM-DD'}') => `, (new FileLogger({ folder, formatStamp: 'YY-MM-DD' })).fullname);
   console.log('basename => ', (new FileLogger({ folder, basename: 'base_name' })).fullname);
   console.log('base + stamp => ', (new FileLogger({ folder, basename: 'base_name-', periodStamp: 'daily' })).fullname);
   console.log('without folder => ', (new FileLogger({ basename: 'base_name' })).fullname);
