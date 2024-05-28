@@ -218,7 +218,7 @@ export abstract class TaskExecutor<T extends TaskType | string> extends EventEmi
   }
 
   /** Procediment que s'ha d'implementar a la classe heredada. */
-  protected abstract executeTask(task: T): Promise<T>;
+  protected abstract executeTask(task: T): Promise<void>;
 
 
   //  pause . resume

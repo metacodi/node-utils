@@ -39,7 +39,7 @@ export declare abstract class TaskExecutor<T extends TaskType | string> extends 
     doTask(task: T): void;
     doTasks(tasks: T[]): void;
     protected executeQueue(): void;
-    protected abstract executeTask(task: T): Promise<T>;
+    protected abstract executeTask(task: T): Promise<void>;
     pauseQueue(): void;
     resumeQueue(): void;
     protected nextTask(): void;

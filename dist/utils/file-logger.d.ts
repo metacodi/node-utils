@@ -22,6 +22,6 @@ export declare class FileLogger extends TaskExecutor<string> implements Logger<s
     get fullname(): string;
     get stamp(): string;
     log(text: string): void;
-    protected executeTask(content: string): Promise<string>;
+    protected executeTask(content: string): Promise<void>;
 }
 //# sourceMappingURL=file-logger.d.ts.map

@@ -113,8 +113,8 @@ export class FileLogger extends TaskExecutor<string> implements Logger<string> {
     super.doTask(text + '\n');
   }
 
-  protected executeTask(content: string): Promise<string> {
-    return new Promise<string>((resolve: any, reject: any) => {
+  protected executeTask(content: string): Promise<void> {
+    return new Promise<void>((resolve: any, reject: any) => {
       const { folder, fullname } = this;
       // Ens assegurem que existeix la carpeta.
       if (folder !== '.' && !fs.existsSync(folder)) { fs.mkdirSync(folder, { recursive: true }); }
@@ -140,8 +140,8 @@ export class FileLogger extends TaskExecutor<string> implements Logger<string> {
 //     console.log(`doing task ${text}`, moment().format('YYYY-MM-DD H:mm:ss.SSS'));
 //     super.do(text + '\n');
 //   }
-//   protected executeTask(task: any): Promise<any> {
-//     return new Promise<any>((resolve: any, reject: any) => {
+//   protected executeTask(task: any): Promise<void> {
+//     return new Promise<void>((resolve: any, reject: any) => {
 //       console.log(`executing task ${task.trim()}`, moment().format('YYYY-MM-DD H:mm:ss.SSS'));
 
 //       // TODO: enviar el log a la base de dades.
