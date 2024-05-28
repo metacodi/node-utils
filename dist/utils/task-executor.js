@@ -346,5 +346,4 @@ const testPriority = (options) => {
         ]);
     }, 5000);
 };
-testPriority({ run: 'async', maxTasksInPeriod: 5, maxTasksCheckingPeriod: 1 });
 //# sourceMappingURL=task-executor.js.map

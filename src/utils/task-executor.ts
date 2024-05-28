@@ -530,4 +530,4 @@ const testPriority = (options?: TestExecutor<PriorityTask>['options']) => {
 // testAsync({ run: 'async', maxTasksInPeriod: 5, maxTasksCheckingPeriod: 2 });
 // testAsync({ run: 'async', maxTasksInPeriod: 4, maxTasksCheckingPeriod: 1.5 });
 
-testPriority({ run: 'async', maxTasksInPeriod: 5, maxTasksCheckingPeriod: 1 }); // binance orders ratio => 5/s
+// testPriority({ run: 'async', maxTasksInPeriod: 5, maxTasksCheckingPeriod: 1 }); // binance orders ratio => 5/s
