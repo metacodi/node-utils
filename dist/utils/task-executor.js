@@ -1,16 +1,24 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaskExecutor = void 0;
+const events_1 = __importDefault(require("events"));
+const moment_1 = __importDefault(require("moment"));
 const deep_merge_1 = require("./deep-merge");
 const functions_1 = require("../functions/functions");
 const terminal_1 = require("../terminal/terminal");
 ;
-class TaskExecutor {
+;
+class TaskExecutor extends events_1.default {
     constructor(options) {
+        super({ captureRejections: false });
         this.options = options;
         this.queue = [];
         this.isExecutingTask = false;
         this.currentTask = undefined;
+        this.history = [];
         this.isSleeping = false;
         this.isExecutionPaused = false;
         this.changeLimitsPending = false;
@@ -86,11 +94,44 @@ class TaskExecutor {
             else {
                 while (this.hasTasksToConsume && !this.isSleeping && !this.isExecutionPaused) {
                     const task = this.consumeTask();
-                    this.currentTask = task;
+                    const result = { task, started: (0, functions_1.timestamp)() };
                     if (this.maxTasksInPeriod > 0) {
                         this.executedTasksInPeriod += 1;
                     }
-                    this.executeTask(task);
+                    let timeout;
+                    let isTimeoutDone = false;
+                    const period = (typeof task !== 'string' ? task.timeout : 0) || this.timeoutTaskPeriod || 0;
+                    if (period > 0) {
+                        timeout = setTimeout(() => {
+                            isTimeoutDone = true;
+                            const d = moment_1.default.duration(period, 'milliseconds');
+                            const t = (0, moment_1.default)().hours(d.hours()).minutes(d.minutes()).seconds(d.seconds()).milliseconds(d.milliseconds());
+                            result.error = { message: `Timeout error (duration: ${t.format('HH:mm:ss.SSS')})` };
+                            result.ended = (0, functions_1.timestamp)();
+                            this.history.unshift(result);
+                            if (timeout) {
+                                clearTimeout(timeout);
+                            }
+                            this.emit('taskTimeout', result);
+                        }, period);
+                    }
+                    this.emit('executingTask', result);
+                    this.executeTask(task).catch(error => {
+                        result.error = error;
+                    }).finally(() => {
+                        if (period === 0 || !isTimeoutDone) {
+                            result.ended = (0, functions_1.timestamp)();
+                            this.history.unshift(result);
+                            if (timeout) {
+                                clearTimeout(timeout);
+                            }
+                            this.emit('taskExecuted', result);
+                        }
+                        else {
+                            result.ended = (0, functions_1.timestamp)();
+                            this.emit('taskExecuted', result);
+                        }
+                    });
                 }
                 this.isExecutingTask = false;
                 this.currentTask = undefined;
@@ -110,14 +151,50 @@ class TaskExecutor {
             return;
         }
         const task = this.consumeTask();
+        const result = { task, started: (0, functions_1.timestamp)() };
         this.currentTask = task;
         if (this.maxTasksInPeriod > 0) {
             this.executedTasksInPeriod += 1;
         }
-        this.executeTask(task).finally(() => {
-            this.isExecutingTask = false;
-            this.currentTask = undefined;
-            this.executeQueue();
+        let timeout;
+        let isTimeoutDone = false;
+        const period = (typeof task !== 'string' ? task.timeout : 0) || this.timeoutTaskPeriod || 0;
+        if (period > 0) {
+            timeout = setTimeout(() => {
+                isTimeoutDone = true;
+                const d = moment_1.default.duration(period, 'milliseconds');
+                const t = (0, moment_1.default)().hours(d.hours()).minutes(d.minutes()).seconds(d.seconds()).milliseconds(d.milliseconds());
+                result.error = { message: `Timeout error (duration: ${t.format('HH:mm:ss.SSS')})` };
+                result.ended = (0, functions_1.timestamp)();
+                this.history.unshift(result);
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+                this.emit('taskTimeout', result);
+                this.isExecutingTask = false;
+                this.currentTask = undefined;
+                this.executeQueue();
+            }, period);
+        }
+        this.emit('executingTask', result);
+        this.executeTask(task).catch(error => {
+            result.error = error;
+        }).finally(() => {
+            if (period === 0 || !isTimeoutDone) {
+                result.ended = (0, functions_1.timestamp)();
+                this.history.unshift(result);
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+                this.emit('taskExecuted', result);
+                this.isExecutingTask = false;
+                this.currentTask = undefined;
+                this.executeQueue();
+            }
+            else {
+                result.ended = (0, functions_1.timestamp)();
+                this.emit('taskExecuted', result);
+            }
         });
     }
     startMaxTasksCheckingInterval() {
@@ -191,17 +268,20 @@ class TaskExecutor {
     consumeTask() { return this.consume === 'shift' ? this.queue.shift() : this.queue.pop(); }
     restoreTask(task) { return this.consume === 'shift' ? this.queue.unshift(task) : this.queue.push(task); }
     get hasTasksToConsume() { return !!this.queue.length && (!this.maxTasksInPeriod || (this.executedTasksInPeriod < this.maxTasksInPeriod)); }
-    sortTasksByPriority() { this.queue.sort((taskA, taskB) => ((taskA === null || taskA === void 0 ? void 0 : taskA.priority) || 1) - ((taskB === null || taskB === void 0 ? void 0 : taskB.priority) || 1)); }
+    sortTasksByPriority() { if (this.hasPriority) {
+        this.queue.sort((taskA, taskB) => ((taskA === null || taskA === void 0 ? void 0 : taskA.priority) || 1) - ((taskB === null || taskB === void 0 ? void 0 : taskB.priority) || 1));
+    } }
     get hasPriority() { return !!this.queue.length && typeof this.queue[0] === 'object' && this.queue[0].hasOwnProperty('priority'); }
     get run() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.run) || 'sync'; }
     get add() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.add) || 'push'; }
     get consume() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.consume) || 'shift'; }
     get delay() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.delay) || 0; }
+    get timeoutTaskPeriod() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.timeoutTaskPeriod) || 0; }
     get maxTasksCheckingPeriod() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.maxTasksCheckingPeriod) || 0; }
     get maxTasksInPeriod() { var _a; return ((_a = this.options) === null || _a === void 0 ? void 0 : _a.maxTasksInPeriod) || 0; }
 }
 exports.TaskExecutor = TaskExecutor;
-class TestTaskExecutor extends TaskExecutor {
+class TestExecutor extends TaskExecutor {
     constructor(options) {
         super(options);
         this.options = options;
@@ -214,13 +294,12 @@ class TestTaskExecutor extends TaskExecutor {
     }
     executeTask(task) {
         return new Promise((resolve, reject) => {
-            (0, functions_1.logTime)(`exec task ${this.stringify(task)}`);
-            setTimeout(() => resolve(), 100);
+            setTimeout(() => resolve(), 1000);
         });
     }
 }
 const test = (options) => {
-    const exec = new TestTaskExecutor(options);
+    const exec = new TestExecutor(options);
     const tasks = [];
     for (let i = 1; i <= 5; i++) {
         tasks.push(`${i}`);
@@ -228,7 +307,7 @@ const test = (options) => {
     exec.doTasks(tasks);
 };
 const testAsync = (options) => {
-    const exec = new TestTaskExecutor(options);
+    const exec = new TestExecutor(options);
     const tasks = [];
     for (let i = 1; i < 9; i++) {
         tasks.push(`${i}`);
@@ -238,13 +317,23 @@ const testAsync = (options) => {
         exec.doTasks(['A', 'B']);
     }, 3000);
 };
+;
 const testPriority = (options) => {
-    const exec = new TestTaskExecutor(options);
+    const exec = new TestExecutor(options);
+    exec.on('executingTask', (result) => {
+        console.log('executingTask => ', result.task);
+    });
+    exec.on('taskExecuted', (result) => {
+        console.log('taskExecuted => ', result.task);
+    });
+    exec.on('taskTimeout', (result) => {
+        console.log('taskTimeout => ', result);
+    });
     const tasks = [];
     for (let i = 1; i <= 60; i++) {
         const range = { min: 1, max: 5 };
         const priority = Math.floor(Math.random() * (range.max - range.min + 1) + range.min);
-        tasks.push({ i, priority });
+        tasks.push({ i: `${i}`, priority, timeout: i % 2 === 0 ? 800 : 1200 });
     }
     exec.doTasks(tasks);
     setTimeout(() => {
@@ -257,4 +346,5 @@ const testPriority = (options) => {
         ]);
     }, 5000);
 };
+testPriority({ run: 'async', maxTasksInPeriod: 5, maxTasksCheckingPeriod: 1 });
 //# sourceMappingURL=task-executor.js.map

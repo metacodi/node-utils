@@ -1,7 +1,8 @@
+import EventEmitter from 'events';
 import moment from 'moment';
 
 import { deepClone } from './deep-merge';
-import { logTime } from '../functions/functions';
+import { logTime, timestamp } from '../functions/functions';
 import { Terminal } from '../terminal/terminal';
 
 
@@ -31,12 +32,48 @@ export interface TaskExecutorOptions {
   run?: 'sync' | 'async';
   /** Quan `run === 'sync'`, indica el nombre de milisegons que es deixaran passar entre l'execució d'una tasca i la següent tasca. */
   delay?: number;
+  /** Quan `run === 'sync'`, indica el nombre de milisegons que es deixaran passar abans de donar per perduda l'execució de la tasca actual. */
+  timeoutTaskPeriod?: number;
   /** Limita el nombre de tasques que es podran executar durant el periode actual. */
   maxTasksInPeriod?: number;
   maxTasksCheckingPeriod?: number;
 };
 
-export abstract class TaskExecutor<T> {
+/**
+ * ```typescript
+ * export interface TaskType {
+ *   // Permet que l'executor pugui ordenar les tasques.
+ *   priority?: number;
+ *   // Temps en milisegons abans de donar la tasca per perduda.
+ *   timeout?: number;
+ * }
+ * ```
+ */
+export interface TaskType {
+  /** Permet que l'executor pugui ordenar les tasques. */
+  priority?: number;
+  /** Temps en milisegons abans de donar la tasca per perduda. */
+  timeout?: number;
+}
+
+/**
+ * ```typescript
+ * export interface TaskResult<T extends TaskType | string> {
+ *   task: T;
+ *   started?: string;
+ *   ended?: string;
+ *   error?: any;
+ * };
+ * ```
+ */
+export interface TaskResult<T extends TaskType | string> {
+  task: T;
+  started?: string;
+  ended?: string;
+  error?: any;
+};
+
+export abstract class TaskExecutor<T extends TaskType | string> extends EventEmitter {
   /** Cua de tasques.
    *
    * ISSUE: Aquesta propietat és `private` per solucionar un problema ocasionat durant el consum de tasques
@@ -49,6 +86,8 @@ export abstract class TaskExecutor<T> {
   isExecutingTask = false;
   /** Referència a la tasca actualment en execució. */
   currentTask: T = undefined;
+  /** Taasques executades. */
+  history: TaskResult<T>[] = [];
   /** Indica si l'execució asíncrona de la cua està suspesa per un període determinat. */
   isSleeping = false;
   /** Indica quan l'execució de la cua està en pausa per una crida a `pauseQueue()`. */
@@ -57,12 +96,11 @@ export abstract class TaskExecutor<T> {
   changeLimitsPending = false;
   /** Quantitat de consultes realitzades durant el periode actual. */
   executedTasksInPeriod = 0;
-  /** @hidden */
-  private maxTasksCheckingSubscription: NodeJS.Timer = undefined;
 
   constructor(
     public options?: TaskExecutorOptions,
   ) {
+    super({ captureRejections: false });
     if (!options) { options = {}; }
     if (options.run === undefined) { options.run = 'sync'; }
     if (options.add === undefined) { options.add = 'push'; }
@@ -124,8 +162,53 @@ export abstract class TaskExecutor<T> {
         while (this.hasTasksToConsume && !this.isSleeping && !this.isExecutionPaused) {
           // Executem la següent tasca de la cua.
           const task = this.consumeTask();
+          const result: TaskResult<T> = { task, started: timestamp() };
+          // Si s'ha establert un màxim, incrementem el comptador.
           if (this.maxTasksInPeriod > 0) { this.executedTasksInPeriod += 1; }
-          this.executeTask(task);
+
+          let timeout: NodeJS.Timeout;
+          let isTimeoutDone = false;
+          // Si la tasca ve informada amb un periode d'execució el prioritzem per damunt de les opcions de configuració.
+          const period = (typeof task !== 'string' ? task.timeout : 0) || this.timeoutTaskPeriod || 0;
+          if (period > 0) {
+            timeout = setTimeout(() => {
+              // Evitem que s'executi la cua quan la tasca ja s'havia donat per perduda.
+              isTimeoutDone = true;
+              // result.error = { message: `Timeout error: ${moment.utc(moment.duration(period, 'milliseconds').asMilliseconds()).format('HH:mm:ss.sss')}` };
+              const d = moment.duration(period, 'milliseconds');
+              const t = moment().hours(d.hours()).minutes(d.minutes()).seconds(d.seconds()).milliseconds(d.milliseconds());
+              result.error = { message: `Timeout error (duration: ${t.format('HH:mm:ss.SSS')})` };
+              // Processem el resultat.
+              result.ended = timestamp();
+              this.history.unshift(result);
+              // Aturem el timeout.
+              if (timeout) { clearTimeout(timeout); }
+              // Notifiquem el timeout de l'execució de la tasca.
+              this.emit('taskTimeout', result);
+            }, period);
+          }
+          this.emit('executingTask', result);
+          this.executeTask(task).catch(error => {
+            // Reportem l'error.
+            result.error = error;
+
+          }).finally(() => {
+            // Evitem que s'executi la cua quan la tasca ja s'havia donat per perduda.
+            if (period === 0 || !isTimeoutDone) {
+              // Processem el resultat.
+              result.ended = timestamp();
+              this.history.unshift(result);
+              // Aturem el timeout.
+              if (timeout) { clearTimeout(timeout); }
+              // Notifiquem la tasca executada.
+              this.emit('taskExecuted', result);
+
+            } else {
+              // Notifiquem la tasca executada encara que l'haguem donada per timeout.
+              result.ended = timestamp();
+              this.emit('taskExecuted', result);
+            }
+          });
         }
         // Restablim l'indicador d'estat per desblocar la cua.
         this.isExecutingTask = false;
@@ -155,30 +238,84 @@ export abstract class TaskExecutor<T> {
     this.executeQueue();
   }
 
+
   //  sync: execució seqüencial
   // ---------------------------------------------------------------------------------------------------
 
   protected nextTask(): void {
     // Comprovem que no estigui en pausa.
     if (this.isExecutionPaused) { return; }
+
     // Executem la següent tasca de la cua pel principi o pel final.
     const task = this.consumeTask();
+    const result: TaskResult<T> = { task, started: timestamp() };
     this.currentTask = task;
-    // Incrementem el comptador.
+    // Si s'ha establert un màxim, incrementem el comptador.
     if (this.maxTasksInPeriod > 0) { this.executedTasksInPeriod += 1; }
+    // NOTA: Per evitar que s'aturi la seqüència, iniciem un periode de timeout per forçar l'execució de la següent tasca.
+    let timeout: NodeJS.Timeout;
+    let isTimeoutDone = false;
+    // Si la tasca ve informada amb un periode d'execució el prioritzem per damunt de les opcions de configuració.
+    const period = (typeof task !== 'string' ? task.timeout : 0) || this.timeoutTaskPeriod || 0;
+    if (period > 0) {
+      timeout = setTimeout(() => {
+        // Evitem que s'executi la cua quan la tasca ja s'havia donat per perduda.
+        isTimeoutDone = true;
+        // result.error = { message: `Timeout error: ${moment.utc(moment.duration(period, 'milliseconds').asMilliseconds()).format('HH:mm:ss.sss')}` };
+        const d = moment.duration(period, 'milliseconds');
+        const t = moment().hours(d.hours()).minutes(d.minutes()).seconds(d.seconds()).milliseconds(d.milliseconds());
+        result.error = { message: `Timeout error (duration: ${t.format('HH:mm:ss.SSS')})` };
+        // Processem el resultat.
+        result.ended = timestamp();
+        this.history.unshift(result);
+        // Aturem el timeout.
+        if (timeout) { clearTimeout(timeout); }
+        // Notifiquem el timeout de l'execució de la tasca.
+        this.emit('taskTimeout', result);
+        // Restablim l'indicador d'estat per desblocar la cua.
+        this.isExecutingTask = false;
+        this.currentTask = undefined;
+        // Mentre quedin tasques s'aniran consumint de la cua.
+        this.executeQueue();
+      }, period);
+    }
+    this.emit('executingTask', result);
     // Esperem el callback per garantir un procés seqüencial.
-    this.executeTask(task).finally(() => {
-      // Restablim l'indicador d'estat per desblocar la cua.
-      this.isExecutingTask = false;
-      this.currentTask = undefined;
-      // Mentre quedin tasques s'aniran consumint de la cua.
-      this.executeQueue();
+    this.executeTask(task).catch(error => {
+      // Reportem l'error.
+      result.error = error;
+
+    }).finally(() => {
+      // Evitem que s'executi la cua quan la tasca ja s'havia donat per perduda.
+      if (period === 0 || !isTimeoutDone) {
+        // Processem el resultat.
+        result.ended = timestamp();
+        this.history.unshift(result);
+        // Aturem el timeout.
+        if (timeout) { clearTimeout(timeout); }
+        // Notifiquem la tasca executada.
+        this.emit('taskExecuted', result);
+        // Restablim l'indicador d'estat per desblocar la cua.
+        this.isExecutingTask = false;
+        this.currentTask = undefined;
+        // Mentre quedin tasques s'aniran consumint de la cua.
+        this.executeQueue();
+
+      } else {
+        // Notifiquem la tasca executada encara que l'haguem donada per timeout.
+        result.ended = timestamp();
+        this.emit('taskExecuted', result);
+      }
     });
   }
 
-  //  async: execució en paral·lel amb control de tasques per periode
+
+  //  async: execució en paral·lel amb control de max tasques per periode
   // ---------------------------------------------------------------------------------------------------
   //  NOTA: L'interval s'activa quan s'estableix l'opció `maxTasksInPeriod > 0`.
+
+  /** @hidden */
+  private maxTasksCheckingSubscription: NodeJS.Timeout = undefined;
 
   protected startMaxTasksCheckingInterval() {
     const { maxTasksCheckingPeriod } = this; // [s]
@@ -282,6 +419,8 @@ export abstract class TaskExecutor<T> {
   get consume(): 'shift' | 'pop' { return this.options?.consume || 'shift'; }
 
   get delay(): number { return this.options?.delay || 0; }
+  
+  get timeoutTaskPeriod(): number { return this.options?.timeoutTaskPeriod || 0; }
 
   get maxTasksCheckingPeriod(): number { return this.options?.maxTasksCheckingPeriod || 0; }
 
@@ -310,9 +449,9 @@ class TestExecutor<T> extends TaskExecutor<T> {
   }
   protected executeTask(task: any): Promise<any> {
     return new Promise<any>((resolve: any, reject: any) => {
-      logTime(`exec task ${this.stringify(task)}`);
+      // logTime(`exec task ${this.stringify(task)}`);
       // Simulem un consum de temps per part de la tasca.
-      setTimeout(() => resolve(), 100);
+      setTimeout(() => resolve(), 1000);
     });
   }
 }
@@ -337,16 +476,28 @@ const testAsync = (options?: TestExecutor<string>['options']) => {
   }, 3000);
 };
 
-interface PriorityTask { i: string; priority?: number };
+interface PriorityTask extends TaskType { i: string; };
 
 const testPriority = (options?: TestExecutor<PriorityTask>['options']) => {
   const exec = new TestExecutor<PriorityTask>(options);
+
+  exec.on('executingTask', (result: TaskResult<PriorityTask>) => {
+    console.log('executingTask => ', result.task);
+  })
+
+  exec.on('taskExecuted', (result: TaskResult<PriorityTask>) => {
+    console.log('taskExecuted => ', result.task);
+  })
+
+  exec.on('taskTimeout', (result: TaskResult<PriorityTask>) => {
+    console.log('taskTimeout => ', result);
+  })
 
   const tasks: PriorityTask[] = []; 
   for (let i = 1; i <= 60; i++) {
     const range = { min: 1, max: 5 };
     const priority = Math.floor(Math.random() * (range.max - range.min + 1) + range.min);
-    tasks.push({ i: `${i}`, priority });
+    tasks.push({ i: `${i}`, priority, timeout: i % 2 === 0 ? 800 : 1200 });
   }
   exec.doTasks(tasks);
 
@@ -379,4 +530,4 @@ const testPriority = (options?: TestExecutor<PriorityTask>['options']) => {
 // testAsync({ run: 'async', maxTasksInPeriod: 5, maxTasksCheckingPeriod: 2 });
 // testAsync({ run: 'async', maxTasksInPeriod: 4, maxTasksCheckingPeriod: 1.5 });
 
-// testPriority({ run: 'async', maxTasksInPeriod: 5, maxTasksCheckingPeriod: 1 }); // binance orders ratio => 5/s
+testPriority({ run: 'async', maxTasksInPeriod: 5, maxTasksCheckingPeriod: 1 }); // binance orders ratio => 5/s

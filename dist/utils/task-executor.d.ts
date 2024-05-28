@@ -1,3 +1,5 @@
+/// <reference types="node" />
+import EventEmitter from 'events';
 import moment from 'moment';
 export interface Interval {
     period: number;
@@ -8,28 +10,40 @@ export interface TaskExecutorOptions {
     consume?: 'shift' | 'pop';
     run?: 'sync' | 'async';
     delay?: number;
+    timeoutTaskPeriod?: number;
     maxTasksInPeriod?: number;
     maxTasksCheckingPeriod?: number;
 }
-export declare abstract class TaskExecutor {
+export interface TaskType {
+    priority?: number;
+    timeout?: number;
+}
+export interface TaskResult<T extends TaskType | string> {
+    task: T;
+    started?: string;
+    ended?: string;
+    error?: any;
+}
+export declare abstract class TaskExecutor<T extends TaskType | string> extends EventEmitter {
     options?: TaskExecutorOptions;
     private queue;
     isExecutingTask: boolean;
-    currentTask: any;
+    currentTask: T;
+    history: TaskResult<T>[];
     isSleeping: boolean;
     isExecutionPaused: boolean;
     changeLimitsPending: boolean;
     executedTasksInPeriod: number;
-    private maxTasksCheckingSubscription;
     constructor(options?: TaskExecutorOptions);
-    do(task: any): void;
-    doTask(task: any): void;
-    doTasks(tasks: any[]): void;
+    do(task: T): void;
+    doTask(task: T): void;
+    doTasks(tasks: T[]): void;
     protected executeQueue(): void;
-    protected abstract executeTask(task: any): Promise<any>;
+    protected abstract executeTask(task: T): Promise<T>;
     pauseQueue(): void;
     resumeQueue(): void;
     protected nextTask(): void;
+    private maxTasksCheckingSubscription;
     protected startMaxTasksCheckingInterval(): void;
     protected stopMaxTasksCheckingInterval(): void;
     protected sleepMaxTasksCheckingInterval(period?: number): void;
@@ -38,10 +52,10 @@ export declare abstract class TaskExecutor {
     getTasks(options?: {
         includeCurrentTask?: boolean;
         cloneTasks?: boolean;
-    }): any[];
-    protected addTask(task: any): void;
-    protected consumeTask(): any;
-    protected restoreTask(task: any): any;
+    }): T[];
+    protected addTask(task: T): void;
+    protected consumeTask(): T;
+    protected restoreTask(task: T): number;
     protected get hasTasksToConsume(): boolean;
     protected sortTasksByPriority(): void;
     protected get hasPriority(): boolean;
@@ -49,6 +63,7 @@ export declare abstract class TaskExecutor {
     get add(): 'unshift' | 'push';
     get consume(): 'shift' | 'pop';
     get delay(): number;
+    get timeoutTaskPeriod(): number;
     get maxTasksCheckingPeriod(): number;
     get maxTasksInPeriod(): number;
 }

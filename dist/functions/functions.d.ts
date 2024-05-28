@@ -18,7 +18,7 @@ export declare const concatError: (error: any, message: string) => ErrorObject;
 export declare const getErrorMessage: (error: any) => string;
 export declare const getErrorObject: (error: any) => ErrorObject;
 export declare const parseError: (error: any) => string;
-export declare type FilterPatternType = string | RegExp | ((text: string) => boolean) | {
+export type FilterPatternType = string | RegExp | ((text: string) => boolean) | {
     test: RegExp | ((text: string) => boolean);
 };
 export declare function applyFilterPattern(text: string, pattern?: FilterPatternType): boolean;

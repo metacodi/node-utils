@@ -1,6 +1,6 @@
 import { TaskExecutor, TaskExecutorOptions } from './task-executor';
-export declare type FilePeriodStamp = 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely';
-export interface Logger extends TaskExecutor {
+export type FilePeriodStamp = 'annually' | 'monthly' | 'weekly' | 'daily' | 'hourly' | 'minutely';
+export interface Logger<T> extends TaskExecutor<T> {
     log(text: string): void;
 }
 export interface FileLoggerOptions extends TaskExecutorOptions {
@@ -10,7 +10,7 @@ export interface FileLoggerOptions extends TaskExecutorOptions {
     periodStamp?: FilePeriodStamp;
     extension?: string;
 }
-export declare class FileLogger extends TaskExecutor implements Logger {
+export declare class FileLogger extends TaskExecutor<string> implements Logger<string> {
     options?: FileLoggerOptions;
     constructor(options?: FileLoggerOptions);
     get folder(): string;
@@ -22,6 +22,6 @@ export declare class FileLogger extends TaskExecutor implements Logger {
     get fullname(): string;
     get stamp(): string;
     log(text: string): void;
-    protected executeTask(content: string): Promise<void>;
+    protected executeTask(content: string): Promise<string>;
 }
 //# sourceMappingURL=file-logger.d.ts.map

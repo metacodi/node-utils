@@ -86,7 +86,7 @@ class FileLogger extends task_executor_1.TaskExecutor {
         }
     }
     log(text) {
-        super.do(text + '\n');
+        super.doTask(text + '\n');
     }
     executeTask(content) {
         return new Promise((resolve, reject) => {
@@ -107,7 +107,8 @@ const test = (folder) => {
     console.log('daily => ', (new FileLogger({ folder, periodStamp: 'daily' })).fullname);
     console.log('hourly => ', (new FileLogger({ folder, periodStamp: 'hourly' })).fullname);
     console.log('minutely => ', (new FileLogger({ folder, periodStamp: 'minutely' })).fullname);
-    console.log('format => ', (new FileLogger({ folder, formatStamp: 'MMM DD YYYY' })).fullname);
+    console.log(`format ('${'MMM DD YYYY'}') => `, (new FileLogger({ folder, formatStamp: 'MMM DD YYYY' })).fullname);
+    console.log(`format ('${'YY-MM-DD'}') => `, (new FileLogger({ folder, formatStamp: 'YY-MM-DD' })).fullname);
     console.log('basename => ', (new FileLogger({ folder, basename: 'base_name' })).fullname);
     console.log('base + stamp => ', (new FileLogger({ folder, basename: 'base_name-', periodStamp: 'daily' })).fullname);
     console.log('without folder => ', (new FileLogger({ basename: 'base_name' })).fullname);
