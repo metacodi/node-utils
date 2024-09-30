@@ -96,7 +96,7 @@ class FtpClient {
     upload(local, remote, options) {
         return __awaiter(this, void 0, void 0, function* () {
             const start = (0, moment_1.default)();
-            terminal_1.Terminal.log(`- Uploading ${chalk_1.default.green(local)} to ${chalk_1.default.green(remote)}`);
+            terminal_1.Terminal.logInline(`- Uploading ${chalk_1.default.green(local)} to ${chalk_1.default.green(remote)}`);
             const result = yield this.uploadAll(local, remote, options);
             const duration = moment_1.default.duration((0, moment_1.default)().diff(start)).asSeconds();
             terminal_1.Terminal.success(`Uploaded ${result ? 'successfully' : 'with errors'} (${duration})`);
@@ -254,7 +254,7 @@ class FtpClient {
     remove(remote, options) {
         return __awaiter(this, void 0, void 0, function* () {
             const start = (0, moment_1.default)();
-            terminal_1.Terminal.log(`- Deleting ${chalk_1.default.green('www/app/')} from server`);
+            terminal_1.Terminal.logInline(`- Deleting ${chalk_1.default.green('www/app/')} from server`);
             const result = yield this.removeAll(remote, options);
             const duration = moment_1.default.duration((0, moment_1.default)().diff(start)).asSeconds();
             terminal_1.Terminal.success(`Deleted ${result ? 'successfully' : 'with errors'} (${duration})`);

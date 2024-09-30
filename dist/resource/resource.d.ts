@@ -1,5 +1,3 @@
-/// <reference types="node" />
-/// <reference types="node" />
 import * as fs from 'fs';
 import { FilterPatternType } from '../functions/functions';
 export interface ResourceType {

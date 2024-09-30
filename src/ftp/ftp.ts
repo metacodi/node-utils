@@ -118,7 +118,7 @@ export class FtpClient {
   /** Uploads file or directory recursively. */
   async upload(local: string, remote: string, options?: { continueOnError?: boolean; verbose?: boolean; ignore?: string | RegExp; filter?: string | RegExp; }) {
     const start = moment();
-    Terminal.log(`- Uploading ${chalk.green(local)} to ${chalk.green(remote)}`);
+    Terminal.logInline(`- Uploading ${chalk.green(local)} to ${chalk.green(remote)}`);
     const result = await this.uploadAll(local, remote, options);
     const duration = moment.duration(moment().diff(start)).asSeconds();
     Terminal.success(`Uploaded ${result ? 'successfully' : 'with errors'} (${duration})`);
@@ -225,7 +225,7 @@ export class FtpClient {
   /** Removes file or directory content and itself recursively. */
   async remove(remote: string, options?: { continueOnError?: boolean; verbose?: boolean; ignore?: string | RegExp; filter?: string | RegExp; }) {
     const start = moment();
-    Terminal.log(`- Deleting ${chalk.green('www/app/')} from server`);
+    Terminal.logInline(`- Deleting ${chalk.green('www/app/')} from server`);
     const result = await this.removeAll(remote, options);
     const duration = moment.duration(moment().diff(start)).asSeconds();
     Terminal.success(`Deleted ${result ? 'successfully' : 'with errors'} (${duration})`);

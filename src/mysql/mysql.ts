@@ -66,7 +66,7 @@ export const interpolateQuery = (query: string, params: { [param: string]: any }
  *     update: "UPDATE `clientes` SET `clientes`.`idreg` = 11575, `clientes`.`idUser` = 11583, `clientes`.`idEmpresa` = null, `clientes`.`idProveedor` = 100, `clientes`.`idPayment` = null, `clientes`.`autoAutorizar` = 0, `clientes`.`created` = '2024-04-30 16:20:28', `clientes`.`updated` = '2024-04-30 16:20:28', `clientes`.`deleted` = null WHERE `clientes`.`idreg` = 11575",
  *     delete: "DELETE FROM `clientes` `clientes` WHERE `clientes`.`idreg` = 11575",
  *   },
- *   fragments: {
+ *   tokens: {
  *     table: "`clientes`",
  *     fields: [
  *       "`idreg`",
@@ -168,9 +168,9 @@ export const generateCrudStatements = (table: string, row: any, options?: { prim
     delete: `DELETE FROM ${table} ${table} WHERE ${pk} = ${idreg}`,
   };
 
-  const fragments = { table, fields, columns, params, pairs, values, primaryKey: pk, idreg };
+  const tokens = { table, fields, columns, params, pairs, values, primaryKey: pk, idreg };
 
-  return { parameterized, interpolated, fragments };
+  return { parameterized, interpolated, tokens };
 }
 
 /** Actualitza la fila de la taula a través de la connexió indicada amb la informació de la fila donada.

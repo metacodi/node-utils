@@ -1,6 +1,6 @@
 {
   "name": "@metacodi/node-utils",
-  "version": "1.0.46",
+  "version": "1.0.45",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -30,20 +30,19 @@
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
     "ftp": "^0.3.10",
-    "moment": "^2.29.4",
-    "mysql2": "^3.11.3"
+    "moment": "^2.30.1",
+    "mysql2": "^3.9.8"
   },
   "devDependencies": {
     "@types/ftp": "^0.3.36",
     "@types/mysql2": "github:types/mysql2",
-    "@types/node": "^18.19.54",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "eslint": "^8.57.1",
-    "eslint-plugin-import": "^2.30.0",
-    "eslint-plugin-jsdoc": "^39.3.6",
+    "@types/node": "^20.12.12",
+    "@typescript-eslint/parser": "^7.11.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsdoc": "^48.2.6",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.4.5"
   }
 }

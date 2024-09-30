@@ -12,7 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.upgradeDependency = exports.incrementPackageVersion = exports.upgradeMajorVersion = exports.upgradeMinorVersion = exports.upgradePatchVersion = exports.applyFilterPattern = exports.parseError = exports.getErrorObject = exports.getErrorMessage = exports.concatError = exports.toNormalizedPascalCase = exports.toPascalCase = exports.toNormalizedKebabCase = exports.toKebabCase = exports.normalizePhoneNumber = exports.normalizeText = exports.capitalize = exports.round = exports.logTime = exports.timestamp = void 0;
+exports.upgradeDependency = exports.incrementPackageVersion = exports.upgradeMajorVersion = exports.upgradeMinorVersion = exports.upgradePatchVersion = exports.parseError = exports.getErrorObject = exports.getErrorMessage = exports.concatError = exports.toNormalizedPascalCase = exports.toPascalCase = exports.toNormalizedKebabCase = exports.toKebabCase = exports.normalizePhoneNumber = exports.normalizeText = exports.logTime = exports.timestamp = void 0;
+exports.round = round;
+exports.capitalize = capitalize;
+exports.applyFilterPattern = applyFilterPattern;
 const chalk_1 = __importDefault(require("chalk"));
 const moment_1 = __importDefault(require("moment"));
 const resource_1 = require("../resource/resource");
@@ -36,7 +39,6 @@ function round(value, decimals) {
     const shift = Math.pow(10, exp);
     return Math.round(value * shift) / shift;
 }
-exports.round = round;
 function capitalize(text) {
     if (typeof text !== 'string') {
         return '';
@@ -46,7 +48,6 @@ function capitalize(text) {
     }
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 }
-exports.capitalize = capitalize;
 const normalizeText = (text) => String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 exports.normalizeText = normalizeText;
 const normalizePhoneNumber = (text) => String(text || '').replace(/\s|-|\.|\(|\)/g, '').replace(/^\+/, '00').replace(/^0034/, '');
@@ -158,18 +159,12 @@ function applyFilterPattern(text, pattern) {
         return pattern(text);
     }
     else if (typeof pattern === 'object') {
-        if (pattern.test instanceof RegExp) {
-            const tester = pattern.test;
-            return tester.test(text);
-        }
-        else if (typeof pattern.test === 'function') {
-            const test = pattern.test;
-            return test(text);
-        }
+        return applyFilterPattern(text, pattern.test);
     }
-    return true;
+    else {
+        return true;
+    }
 }
-exports.applyFilterPattern = applyFilterPattern;
 const upgradePatchVersion = (version) => {
     const newVersion = version.split('.');
     newVersion[2] = `${+newVersion[2] + 1}`;

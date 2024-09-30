@@ -71,6 +71,22 @@ export interface ErrorObject {
   data?: any;
 };
 
+/** Concatena errors retornats en cascada ascendent.
+ *
+ * ```typescript
+ * // Exemple d'una funció de baix nivell que propaga l'error informant del nivell actual des d'on s'ha capturat.
+ * function executeQuery(sql: string) {
+ *   try {
+ *     db.execute(query);  
+ *   } catch (error: any) {
+ *     throw concatError(error, `Error executing query: ${sql}.`);
+ *   }
+ * }
+ * ```
+ * @param error 
+ * @param message 
+ * @returns 
+ */
 export const concatError = (error: any, message: string): ErrorObject => {
   const internal = getErrorMessage(error);
   const err = message ? `${message} ${internal}` : internal;
@@ -112,7 +128,7 @@ export const parseError = (error: any): string => {
         else if (typeof error[key] === 'number') { err.push(`"${[key]}":${error[key]}`); }
         // Pels error que podem anar passant en cascada a través de successius try-catch anidats.
         else if (key === 'error') { err.push(`"${[key]}":${parseError(error[key])}`); }
-        // Qualsevol altra valor s'intentarà expressar en format JSON.
+        // Qualsevol altre valor s'intentarà expressar en format JSON.
         else if (typeof error[key] !== 'function') {
           try {
             err.push(`"${[key]}":${JSON.stringify(error[key])}`);
@@ -163,17 +179,11 @@ export function applyFilterPattern(text: string, pattern?: FilterPatternType): b
     return pattern(text);
 
   } else if (typeof pattern === 'object') {
+    return applyFilterPattern(text, pattern.test);
 
-    if (pattern.test instanceof RegExp) {
-      const tester: RegExp = pattern.test;
-      return tester.test(text);
-
-    } else if (typeof pattern.test === 'function') {
-      const test: (text: string) => boolean = pattern.test;
-      return test(text);
-    }
+  } else {
+    return true;
   }
-  return true;
 }
 
 

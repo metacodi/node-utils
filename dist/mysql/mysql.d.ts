@@ -27,7 +27,7 @@ export declare const generateCrudStatements: (table: string, row: any, options?:
         update: string;
         delete: string;
     };
-    fragments: {
+    tokens: {
         table: string;
         fields: string[];
         columns: string[];

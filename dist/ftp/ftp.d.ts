@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import Client from 'ftp';
 import { FilterPatternType } from '../functions/functions';
 export interface FtpUploadOptions {

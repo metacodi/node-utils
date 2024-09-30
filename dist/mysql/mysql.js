@@ -109,8 +109,8 @@ const generateCrudStatements = (table, row, options) => {
         update: (0, exports.interpolateQuery)(parameterized.update, values, { scapeParamValues: false }),
         delete: `DELETE FROM ${table} ${table} WHERE ${pk} = ${idreg}`,
     };
-    const fragments = { table, fields, columns, params, pairs, values, primaryKey: pk, idreg };
-    return { parameterized, interpolated, fragments };
+    const tokens = { table, fields, columns, params, pairs, values, primaryKey: pk, idreg };
+    return { parameterized, interpolated, tokens };
 };
 exports.generateCrudStatements = generateCrudStatements;
 const syncRow = (conn, table, row, options) => __awaiter(void 0, void 0, void 0, function* () {
