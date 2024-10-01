@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-import chalk from 'chalk';
-import Prompt from 'commander';
+import mysql from 'mysql2';
+import { Connection, Pool, PoolConnection } from 'mysql2/promise';
 import moment from 'moment';
-import * as mysql from 'mysql2';
-import { Pool, PoolConnection } from 'mysql2/promise';
 
 
 /** Retorna el nom de l'entitat (taula, camp, funció) encerclat amb comes inclinades. */
@@ -180,7 +178,7 @@ export const generateCrudStatements = (table: string, row: any, options?: { prim
  * @param selectWithAsterik Indica si a la sentència select s'utilitzarà un asterisk '*' enlloc d'una llista de les columnes de la taula. @default false.
  * @returns Una estructura de dades amb la informació dels canvis realitzats.
  */
-export const syncRow = async (conn: PoolConnection, table: string, row: any, options?: { primaryKey?: string; prefixFieldsWithTable?: boolean; selectWithAsterik?: boolean }): Promise<any> => {
+export const syncRow = async (conn: Connection | PoolConnection, table: string, row: any, options?: { primaryKey?: string; prefixFieldsWithTable?: boolean; selectWithAsterik?: boolean }): Promise<any> => {
   // Obtenim les sentències SQL per la fila actual.
   const crud = generateCrudStatements(table, row, options);
   const { select, insert, update } = crud.interpolated;
@@ -195,14 +193,15 @@ export const syncRow = async (conn: PoolConnection, table: string, row: any, opt
 }
 
 /** Retorna la data de l'última actualització de la taula indicada. */
-export const getTableLastUpdate = async (conn: PoolConnection | Pool, tableName: string): Promise<string> => {
+export const getTableLastUpdate = async (conn: Connection | PoolConnection | Pool, tableName: string): Promise<string> => {
+  // const conn: Connection
   const [rows] = await conn.query(`SELECT UPDATE_TIME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${tableName}'`);
   const result = Array.isArray(rows) ? rows as any[] : [rows];
   return Promise.resolve(result.length ? moment(result[0].UPDATE_TIME).format('YYYY-MM-DD HH:mm:ss') : undefined);
 }
 
 /** Retorna les dates de la darrera creació i actualització de la taula indicada. */
-export const getTableAuditTimes = async (conn: PoolConnection | Pool, tableName: string): Promise<{ created: string, updated: string }> => {
+export const getTableAuditTimes = async (conn: Connection | PoolConnection | Pool, tableName: string): Promise<{ created: string, updated: string }> => {
   const [rows] = await conn.query(`SELECT CREATE_TIME, UPDATE_TIME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '${tableName}'`);
   const result = Array.isArray(rows) ? rows as any[] : [rows];
   if (result.length) {

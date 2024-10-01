@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Pool, PoolConnection } from 'mysql2/promise';
+import { Connection, Pool, PoolConnection } from 'mysql2/promise';
 export declare const quoteEntityName: (entityName: string) => string;
 export declare const convertToSql: (value: any, options?: {
     scapeParamValues?: boolean;
@@ -40,13 +40,13 @@ export declare const generateCrudStatements: (table: string, row: any, options?:
         idreg: any;
     };
 };
-export declare const syncRow: (conn: PoolConnection, table: string, row: any, options?: {
+export declare const syncRow: (conn: Connection | PoolConnection, table: string, row: any, options?: {
     primaryKey?: string;
     prefixFieldsWithTable?: boolean;
     selectWithAsterik?: boolean;
 }) => Promise<any>;
-export declare const getTableLastUpdate: (conn: PoolConnection | Pool, tableName: string) => Promise<string>;
-export declare const getTableAuditTimes: (conn: PoolConnection | Pool, tableName: string) => Promise<{
+export declare const getTableLastUpdate: (conn: Connection | PoolConnection | Pool, tableName: string) => Promise<string>;
+export declare const getTableAuditTimes: (conn: Connection | PoolConnection | Pool, tableName: string) => Promise<{
     created: string;
     updated: string;
 }>;

@@ -1,28 +1,5 @@
 #!/usr/bin/env node
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -37,8 +14,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getTableAuditTimes = exports.getTableLastUpdate = exports.syncRow = exports.generateCrudStatements = exports.interpolateQuery = exports.convertToSql = exports.quoteEntityName = void 0;
+const mysql2_1 = __importDefault(require("mysql2"));
 const moment_1 = __importDefault(require("moment"));
-const mysql = __importStar(require("mysql2"));
 const quoteEntityName = (entityName) => { return entityName.startsWith('`') ? entityName : `\`${entityName}\``; };
 exports.quoteEntityName = quoteEntityName;
 const convertToSql = (value, options) => {
@@ -48,7 +25,7 @@ const convertToSql = (value, options) => {
     const scapeParamValues = options.scapeParamValues === undefined ? true : options.scapeParamValues;
     if (value instanceof Date && !isNaN(value)) {
         const date = (0, moment_1.default)(value).format('YYYY-MM-DD HH:mm:ss');
-        return scapeParamValues ? mysql.escape(date) : date;
+        return scapeParamValues ? mysql2_1.default.escape(date) : date;
     }
     else if (value === undefined || value === null) {
         return 'null';
@@ -57,7 +34,7 @@ const convertToSql = (value, options) => {
         return `${value}`;
     }
     else {
-        return scapeParamValues ? mysql.escape(`${value}`) : `${value}`;
+        return scapeParamValues ? mysql2_1.default.escape(`${value}`) : `${value}`;
     }
 };
 exports.convertToSql = convertToSql;
@@ -70,7 +47,7 @@ const interpolateQuery = (query, params, options) => {
     const stringifyParamValues = options.stringifyParamValues === undefined ? false : !!options.stringifyParamValues;
     const scapeParamValues = options.scapeParamValues === undefined || stringifyParamValues ? false : !!options.scapeParamValues;
     const interpolated = query.replace(/\:(\w+)/g, (txt, name) => params.hasOwnProperty(name) ?
-        (stringifyParamValues ? (0, exports.convertToSql)(params[name], { scapeParamValues: true }) : (scapeParamValues ? mysql.escape(params[name]) : params[name])) : txt);
+        (stringifyParamValues ? (0, exports.convertToSql)(params[name], { scapeParamValues: true }) : (scapeParamValues ? mysql2_1.default.escape(params[name]) : params[name])) : txt);
     return interpolated;
 };
 exports.interpolateQuery = interpolateQuery;

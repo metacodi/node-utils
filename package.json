@@ -1,6 +1,6 @@
 {
   "name": "@metacodi/node-utils",
-  "version": "1.0.46",
+  "version": "1.0.47",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,18 +23,21 @@
     "node": ">= 8.0.0"
   },
   "homepage": "https://github.com/metacodi/node-utils#readme",
-  "keywords": [],
+  "keywords": [
+    "metacodi",
+    "node",
+    "utils",
+    "tools"
+  ],
   "author": "",
   "license": "ISC",
   "peerDependencies": {
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
-    "ftp": "^0.3.10",
     "moment": "^2.29.4",
     "mysql2": "^3.11.3"
   },
   "devDependencies": {
-    "@types/ftp": "^0.3.36",
     "@types/mysql2": "github:types/mysql2",
     "@types/node": "^18.19.54",
     "@typescript-eslint/eslint-plugin": "^7.18.0",

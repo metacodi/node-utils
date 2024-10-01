@@ -1,7 +1,5 @@
 
 
-export { FtpClient, FtpUploadOptions } from './ftp/ftp';
-
 export * from './functions/functions';
 
 export { Git } from './git/git';

@@ -44,8 +44,9 @@ if (options.verbose) { console.log('Arguments: ', options); }
     Terminal.log(`npm publish`);
     await Terminal.run(`npm publish`);
 
-    Terminal.success(`Projecte publicat correctament!`);
-
+    Terminal.log(chalk.blueBright(`Repositori publicat correctament!`));
+    const pkg = Resource.open('package.json');
+    Terminal.log(chalk.green(`npm install ` + chalk.bold(`@metacodi/node-utils@${pkg.version}`) + ' --save-dev'));
 
   } catch (error) {
     Terminal.error(error);

@@ -14,9 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Terminal = exports.Resource = exports.Git = exports.FtpClient = void 0;
-var ftp_1 = require("./ftp/ftp");
-Object.defineProperty(exports, "FtpClient", { enumerable: true, get: function () { return ftp_1.FtpClient; } });
+exports.Terminal = exports.Resource = exports.Git = void 0;
 __exportStar(require("./functions/functions"), exports);
 var git_1 = require("./git/git");
 Object.defineProperty(exports, "Git", { enumerable: true, get: function () { return git_1.Git; } });
